@@ -5,8 +5,8 @@ from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
-from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
-from deepctr_torch.models import DeepFM
+from functr.inputs import SparseFeat, DenseFeat, get_feature_names
+from functr.models import DeepFM
 
 if __name__ == "__main__":
     data = pd.read_csv('./criteo_sample.txt')

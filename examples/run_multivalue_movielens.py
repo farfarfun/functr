@@ -4,8 +4,9 @@ import torch
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
-from deepctr_torch.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
-from deepctr_torch.models import DeepFM
+from functr.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
+from functr.models import DeepFM
+
 
 
 def split(x):

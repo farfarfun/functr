@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 
-from deepctr_torch.inputs import SparseFeat, DenseFeat, VarLenSparseFeat, get_feature_names
-from deepctr_torch.models import DIEN
+from functr.inputs import SparseFeat, DenseFeat, VarLenSparseFeat, get_feature_names
+from functr.models import DIEN
 
 
 def get_xy_fd(use_neg=False, hash_flag=False):
