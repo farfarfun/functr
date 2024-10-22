@@ -5,6 +5,7 @@ Author:
 Reference:
     [1] Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.(https://arxiv.org/abs/1810.11921)
 """
+
 import torch
 import torch.nn as nn
 
@@ -36,14 +37,36 @@ class AutoInt(BaseModel):
 
     """
 
-    def __init__(self, linear_feature_columns, dnn_feature_columns, att_layer_num=3,
-                 att_head_num=2, att_res=True, dnn_hidden_units=(256, 128), dnn_activation='relu',
-                 l2_reg_dnn=0, l2_reg_embedding=1e-5, dnn_use_bn=False, dnn_dropout=0, init_std=0.0001, seed=1024,
-                 task='binary', device='cpu', gpus=None):
-
-        super(AutoInt, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=0,
-                                      l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                      device=device, gpus=gpus)
+    def __init__(
+        self,
+        linear_feature_columns,
+        dnn_feature_columns,
+        att_layer_num=3,
+        att_head_num=2,
+        att_res=True,
+        dnn_hidden_units=(256, 128),
+        dnn_activation="relu",
+        l2_reg_dnn=0,
+        l2_reg_embedding=1e-5,
+        dnn_use_bn=False,
+        dnn_dropout=0,
+        init_std=0.0001,
+        seed=1024,
+        task="binary",
+        device="cpu",
+        gpus=None,
+    ):
+        super(AutoInt, self).__init__(
+            linear_feature_columns,
+            dnn_feature_columns,
+            l2_reg_linear=0,
+            l2_reg_embedding=l2_reg_embedding,
+            init_std=init_std,
+            seed=seed,
+            task=task,
+            device=device,
+            gpus=gpus,
+        )
         if len(dnn_hidden_units) <= 0 and att_layer_num <= 0:
             raise ValueError("Either hidden_layer or att_layer_num must > 0")
         self.use_dnn = len(dnn_feature_columns) > 0 and len(dnn_hidden_units) > 0
@@ -64,20 +87,29 @@ class AutoInt(BaseModel):
         self.dnn_hidden_units = dnn_hidden_units
         self.att_layer_num = att_layer_num
         if self.use_dnn:
-            self.dnn = DNN(self.compute_input_dim(dnn_feature_columns), dnn_hidden_units,
-                           activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                           init_std=init_std, device=device)
+            self.dnn = DNN(
+                self.compute_input_dim(dnn_feature_columns),
+                dnn_hidden_units,
+                activation=dnn_activation,
+                l2_reg=l2_reg_dnn,
+                dropout_rate=dnn_dropout,
+                use_bn=dnn_use_bn,
+                init_std=init_std,
+                device=device,
+            )
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
+                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+            )
         self.int_layers = nn.ModuleList(
-            [InteractingLayer(embedding_size, att_head_num, att_res, device=device) for _ in range(att_layer_num)])
+            [InteractingLayer(embedding_size, att_head_num, att_res, device=device) for _ in range(att_layer_num)]
+        )
 
         self.to(device)
 
     def forward(self, X):
-
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict
+        )
         logit = self.linear_model(X)
 
         att_input = concat_fun(sparse_embedding_list, axis=1)

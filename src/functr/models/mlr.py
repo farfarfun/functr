@@ -6,12 +6,13 @@ Author:
 Reference:
     [1] Gai K, Zhu X, Li H, et al. Learning Piece-wise Linear Models from Large Scale Data for Ad Click Prediction[J]. arXiv preprint arXiv:1704.05194, 2017.(https://arxiv.org/abs/1704.05194)
 """
+
 import torch
 import torch.nn as nn
 
-from .basemodel import Linear, BaseModel
 from ..inputs import build_input_features
 from ..layers import PredictionLayer
+from .basemodel import BaseModel, Linear
 
 
 class MLR(BaseModel):
@@ -31,9 +32,19 @@ class MLR(BaseModel):
 
     """
 
-    def __init__(self, region_feature_columns, base_feature_columns=None, bias_feature_columns=None,
-                 region_num=4, l2_reg_linear=1e-5, init_std=0.0001, seed=1024, task='binary', device='cpu', gpus=None
-                 ):
+    def __init__(
+        self,
+        region_feature_columns,
+        base_feature_columns=None,
+        bias_feature_columns=None,
+        region_num=4,
+        l2_reg_linear=1e-5,
+        init_std=0.0001,
+        seed=1024,
+        task="binary",
+        device="cpu",
+        gpus=None,
+    ):
         super(MLR, self).__init__(region_feature_columns, region_feature_columns, task=task, device=device, gpus=gpus)
 
         if region_num <= 1:
@@ -56,43 +67,49 @@ class MLR(BaseModel):
             self.bias_feature_columns = []
 
         self.feature_index = build_input_features(
-            self.region_feature_columns + self.base_feature_columns + self.bias_feature_columns)
+            self.region_feature_columns + self.base_feature_columns + self.bias_feature_columns
+        )
 
-        self.region_linear_model = nn.ModuleList([Linear(
-            self.region_feature_columns, self.feature_index, self.init_std, self.device) for i in
-            range(self.region_num)])
+        self.region_linear_model = nn.ModuleList(
+            [
+                Linear(self.region_feature_columns, self.feature_index, self.init_std, self.device)
+                for i in range(self.region_num)
+            ]
+        )
 
-        self.base_linear_model = nn.ModuleList([Linear(
-            self.base_feature_columns, self.feature_index, self.init_std, self.device) for i in range(self.region_num)])
+        self.base_linear_model = nn.ModuleList(
+            [
+                Linear(self.base_feature_columns, self.feature_index, self.init_std, self.device)
+                for i in range(self.region_num)
+            ]
+        )
 
         if self.bias_feature_columns is not None and len(self.bias_feature_columns) > 0:
             self.bias_model = nn.Sequential(
-                Linear(self.bias_feature_columns, self.feature_index,
-                       self.init_std, self.device),
-                PredictionLayer(task='binary', use_bias=False))
+                Linear(self.bias_feature_columns, self.feature_index, self.init_std, self.device),
+                PredictionLayer(task="binary", use_bias=False),
+            )
 
         self.prediction_layer = PredictionLayer(task=task, use_bias=False)
 
         self.to(self.device)
 
     def get_region_score(self, inputs, region_number):
-        region_logit = torch.cat([self.region_linear_model[i](
-            inputs) for i in range(region_number)], dim=-1)
+        region_logit = torch.cat([self.region_linear_model[i](inputs) for i in range(region_number)], dim=-1)
         region_score = nn.Softmax(dim=-1)(region_logit)
         return region_score
 
     def get_learner_score(self, inputs, region_number):
-        learner_score = self.prediction_layer(torch.cat(
-            [self.region_linear_model[i](inputs) for i in range(region_number)], dim=-1))
+        learner_score = self.prediction_layer(
+            torch.cat([self.region_linear_model[i](inputs) for i in range(region_number)], dim=-1)
+        )
         return learner_score
 
     def forward(self, X):
-
         region_score = self.get_region_score(X, self.region_num)
         learner_score = self.get_learner_score(X, self.region_num)
 
-        final_logit = torch.sum(
-            region_score * learner_score, dim=-1, keepdim=True)
+        final_logit = torch.sum(region_score * learner_score, dim=-1, keepdim=True)
 
         if self.bias_feature_columns is not None and len(self.bias_feature_columns) > 0:
             bias_score = self.bias_model(X)

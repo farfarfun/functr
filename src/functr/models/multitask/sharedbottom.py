@@ -6,12 +6,13 @@ Author:
 Reference:
     [1] Ruder S. An overview of multi-task learning in deep neural networks[J]. arXiv preprint arXiv:1706.05098, 2017.(https://arxiv.org/pdf/1706.05098.pdf)
 """
+
 import torch
 import torch.nn as nn
 
-from ..basemodel import BaseModel
 from ...inputs import combined_dnn_input
 from ...layers import DNN, PredictionLayer
+from ..basemodel import BaseModel
 
 
 class SharedBottom(BaseModel):
@@ -36,13 +37,34 @@ class SharedBottom(BaseModel):
     :return: A PyTorch model instance.
     """
 
-    def __init__(self, dnn_feature_columns, bottom_dnn_hidden_units=(256, 128), tower_dnn_hidden_units=(64,),
-                 l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
-                 dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False, task_types=('binary', 'binary'),
-                 task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
-        super(SharedBottom, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
-                                           l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding,
-                                           init_std=init_std, seed=seed, device=device, gpus=gpus)
+    def __init__(
+        self,
+        dnn_feature_columns,
+        bottom_dnn_hidden_units=(256, 128),
+        tower_dnn_hidden_units=(64,),
+        l2_reg_linear=0.00001,
+        l2_reg_embedding=0.00001,
+        l2_reg_dnn=0,
+        init_std=0.0001,
+        seed=1024,
+        dnn_dropout=0,
+        dnn_activation="relu",
+        dnn_use_bn=False,
+        task_types=("binary", "binary"),
+        task_names=("ctr", "ctcvr"),
+        device="cpu",
+        gpus=None,
+    ):
+        super(SharedBottom, self).__init__(
+            linear_feature_columns=[],
+            dnn_feature_columns=dnn_feature_columns,
+            l2_reg_linear=l2_reg_linear,
+            l2_reg_embedding=l2_reg_embedding,
+            init_std=init_std,
+            seed=seed,
+            device=device,
+            gpus=gpus,
+        )
         self.num_tasks = len(task_names)
         if self.num_tasks <= 1:
             raise ValueError("num_tasks must be greater than 1")
@@ -52,7 +74,7 @@ class SharedBottom(BaseModel):
             raise ValueError("num_tasks must be equal to the length of task_types")
 
         for task_type in task_types:
-            if task_type not in ['binary', 'regression']:
+            if task_type not in ["binary", "regression"]:
                 raise ValueError("task must be binary or regression, {} is illegal".format(task_type))
 
         self.task_names = task_names
@@ -60,33 +82,60 @@ class SharedBottom(BaseModel):
         self.bottom_dnn_hidden_units = bottom_dnn_hidden_units
         self.tower_dnn_hidden_units = tower_dnn_hidden_units
 
-        self.bottom_dnn = DNN(self.input_dim, bottom_dnn_hidden_units, activation=dnn_activation,
-                              dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                              init_std=init_std, device=device)
+        self.bottom_dnn = DNN(
+            self.input_dim,
+            bottom_dnn_hidden_units,
+            activation=dnn_activation,
+            dropout_rate=dnn_dropout,
+            use_bn=dnn_use_bn,
+            init_std=init_std,
+            device=device,
+        )
         if len(self.tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
-                [DNN(bottom_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
-                     dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                     init_std=init_std, device=device) for _ in range(self.num_tasks)])
+                [
+                    DNN(
+                        bottom_dnn_hidden_units[-1],
+                        tower_dnn_hidden_units,
+                        activation=dnn_activation,
+                        dropout_rate=dnn_dropout,
+                        use_bn=dnn_use_bn,
+                        init_std=init_std,
+                        device=device,
+                    )
+                    for _ in range(self.num_tasks)
+                ]
+            )
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
-                l2=l2_reg_dnn)
-        self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(
-            tower_dnn_hidden_units[-1] if len(self.tower_dnn_hidden_units) > 0 else bottom_dnn_hidden_units[-1], 1,
-            bias=False) for _ in range(self.num_tasks)])
+                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.tower_dnn.named_parameters()),
+                l2=l2_reg_dnn,
+            )
+        self.tower_dnn_final_layer = nn.ModuleList(
+            [
+                nn.Linear(
+                    tower_dnn_hidden_units[-1] if len(self.tower_dnn_hidden_units) > 0 else bottom_dnn_hidden_units[-1],
+                    1,
+                    bias=False,
+                )
+                for _ in range(self.num_tasks)
+            ]
+        )
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.bottom_dnn.named_parameters()), l2=l2_reg_dnn)
+            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.bottom_dnn.named_parameters()), l2=l2_reg_dnn
+        )
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn_final_layer.named_parameters()),
-            l2=l2_reg_dnn)
+            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.tower_dnn_final_layer.named_parameters()),
+            l2=l2_reg_dnn,
+        )
         self.to(device)
 
     def forward(self, X):
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict
+        )
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
         shared_bottom_output = self.bottom_dnn(dnn_input)
 

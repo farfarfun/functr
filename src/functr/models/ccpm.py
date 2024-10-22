@@ -40,37 +40,68 @@ class CCPM(BaseModel):
 
     """
 
-    def __init__(self, linear_feature_columns, dnn_feature_columns, conv_kernel_width=(6, 5),
-                 conv_filters=(4, 4),
-                 dnn_hidden_units=(256,), l2_reg_linear=1e-5, l2_reg_embedding=1e-5, l2_reg_dnn=0, dnn_dropout=0,
-                 init_std=0.0001, seed=1024, task='binary', device='cpu', dnn_use_bn=False, dnn_activation='relu', gpus=None):
-
-        super(CCPM, self).__init__(linear_feature_columns, dnn_feature_columns, l2_reg_linear=l2_reg_linear,
-                                   l2_reg_embedding=l2_reg_embedding, init_std=init_std, seed=seed, task=task,
-                                   device=device, gpus=gpus)
+    def __init__(
+        self,
+        linear_feature_columns,
+        dnn_feature_columns,
+        conv_kernel_width=(6, 5),
+        conv_filters=(4, 4),
+        dnn_hidden_units=(256,),
+        l2_reg_linear=1e-5,
+        l2_reg_embedding=1e-5,
+        l2_reg_dnn=0,
+        dnn_dropout=0,
+        init_std=0.0001,
+        seed=1024,
+        task="binary",
+        device="cpu",
+        dnn_use_bn=False,
+        dnn_activation="relu",
+        gpus=None,
+    ):
+        super(CCPM, self).__init__(
+            linear_feature_columns,
+            dnn_feature_columns,
+            l2_reg_linear=l2_reg_linear,
+            l2_reg_embedding=l2_reg_embedding,
+            init_std=init_std,
+            seed=seed,
+            task=task,
+            device=device,
+            gpus=gpus,
+        )
 
         if len(conv_kernel_width) != len(conv_filters):
-            raise ValueError(
-                "conv_kernel_width must have same element with conv_filters")
+            raise ValueError("conv_kernel_width must have same element with conv_filters")
 
         filed_size = self.compute_input_dim(dnn_feature_columns, include_dense=False, feature_group=True)
-        self.conv_layer = ConvLayer(field_size=filed_size, conv_kernel_width=conv_kernel_width,
-                                    conv_filters=conv_filters, device=device)
+        self.conv_layer = ConvLayer(
+            field_size=filed_size, conv_kernel_width=conv_kernel_width, conv_filters=conv_filters, device=device
+        )
         self.dnn_input_dim = self.conv_layer.filed_shape * self.embedding_size * conv_filters[-1]
-        self.dnn = DNN(self.dnn_input_dim, dnn_hidden_units,
-                       activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                       init_std=init_std, device=device)
+        self.dnn = DNN(
+            self.dnn_input_dim,
+            dnn_hidden_units,
+            activation=dnn_activation,
+            l2_reg=l2_reg_dnn,
+            dropout_rate=dnn_dropout,
+            use_bn=dnn_use_bn,
+            init_std=init_std,
+            device=device,
+        )
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.add_regularization_weight(
-            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn)
+            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+        )
         self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
 
         self.to(device)
 
     def forward(self, X):
         linear_logit = self.linear_model(X)
-        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                   self.embedding_dict, support_dense=False)
+        sparse_embedding_list, _ = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict, support_dense=False
+        )
         if len(sparse_embedding_list) == 0:
             raise ValueError("must have the embedding feature,now the embedding feature is None!")
         conv_input = concat_fun(sparse_embedding_list, axis=1)

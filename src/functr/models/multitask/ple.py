@@ -6,12 +6,13 @@ Author:
 Reference:
     [1] Tang H, Liu J, Zhao M, et al. Progressive layered extraction (ple): A novel multi-task learning (mtl) model for personalized recommendations[C]//Fourteenth ACM Conference on Recommender Systems. 2020.(https://dl.acm.org/doi/10.1145/3383313.3412236)
 """
+
 import torch
 import torch.nn as nn
 
-from ..basemodel import BaseModel
 from ...inputs import combined_dnn_input
 from ...layers import DNN, PredictionLayer
+from ..basemodel import BaseModel
 
 
 class PLE(BaseModel):
@@ -40,14 +41,38 @@ class PLE(BaseModel):
     :return: A PyTorch model instance.
     """
 
-    def __init__(self, dnn_feature_columns, shared_expert_num=1, specific_expert_num=1, num_levels=2,
-                 expert_dnn_hidden_units=(256, 128), gate_dnn_hidden_units=(64,), tower_dnn_hidden_units=(64,),
-                 l2_reg_linear=0.00001, l2_reg_embedding=0.00001, l2_reg_dnn=0, init_std=0.0001, seed=1024,
-                 dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False, task_types=('binary', 'binary'),
-                 task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
-        super(PLE, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
-                                  l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding, init_std=init_std,
-                                  seed=seed, device=device, gpus=gpus)
+    def __init__(
+        self,
+        dnn_feature_columns,
+        shared_expert_num=1,
+        specific_expert_num=1,
+        num_levels=2,
+        expert_dnn_hidden_units=(256, 128),
+        gate_dnn_hidden_units=(64,),
+        tower_dnn_hidden_units=(64,),
+        l2_reg_linear=0.00001,
+        l2_reg_embedding=0.00001,
+        l2_reg_dnn=0,
+        init_std=0.0001,
+        seed=1024,
+        dnn_dropout=0,
+        dnn_activation="relu",
+        dnn_use_bn=False,
+        task_types=("binary", "binary"),
+        task_names=("ctr", "ctcvr"),
+        device="cpu",
+        gpus=None,
+    ):
+        super(PLE, self).__init__(
+            linear_feature_columns=[],
+            dnn_feature_columns=dnn_feature_columns,
+            l2_reg_linear=l2_reg_linear,
+            l2_reg_embedding=l2_reg_embedding,
+            init_std=init_std,
+            seed=seed,
+            device=device,
+            gpus=gpus,
+        )
         self.num_tasks = len(task_names)
         if self.num_tasks <= 1:
             raise ValueError("num_tasks must be greater than 1!")
@@ -57,7 +82,7 @@ class PLE(BaseModel):
             raise ValueError("num_tasks must be equal to the length of task_types")
 
         for task_type in task_types:
-            if task_type not in ['binary', 'regression']:
+            if task_type not in ["binary", "regression"]:
                 raise ValueError("task must be binary or regression, {} is illegal".format(task_type))
 
         self.specific_expert_num = specific_expert_num
@@ -71,76 +96,165 @@ class PLE(BaseModel):
 
         def multi_module_list(num_level, num_tasks, expert_num, inputs_dim_level0, inputs_dim_not_level0, hidden_units):
             return nn.ModuleList(
-                [nn.ModuleList([nn.ModuleList([DNN(inputs_dim_level0 if level_num == 0 else inputs_dim_not_level0,
-                                                   hidden_units, activation=dnn_activation,
-                                                   l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                                                   init_std=init_std, device=device) for _ in
-                                               range(expert_num)])
-                                for _ in range(num_tasks)]) for level_num in range(num_level)])
+                [
+                    nn.ModuleList(
+                        [
+                            nn.ModuleList(
+                                [
+                                    DNN(
+                                        inputs_dim_level0 if level_num == 0 else inputs_dim_not_level0,
+                                        hidden_units,
+                                        activation=dnn_activation,
+                                        l2_reg=l2_reg_dnn,
+                                        dropout_rate=dnn_dropout,
+                                        use_bn=dnn_use_bn,
+                                        init_std=init_std,
+                                        device=device,
+                                    )
+                                    for _ in range(expert_num)
+                                ]
+                            )
+                            for _ in range(num_tasks)
+                        ]
+                    )
+                    for level_num in range(num_level)
+                ]
+            )
 
         # 1. experts
         # task-specific experts
-        self.specific_experts = multi_module_list(self.num_levels, self.num_tasks, self.specific_expert_num,
-                                                  self.input_dim, expert_dnn_hidden_units[-1], expert_dnn_hidden_units)
+        self.specific_experts = multi_module_list(
+            self.num_levels,
+            self.num_tasks,
+            self.specific_expert_num,
+            self.input_dim,
+            expert_dnn_hidden_units[-1],
+            expert_dnn_hidden_units,
+        )
 
         # shared experts
-        self.shared_experts = multi_module_list(self.num_levels, 1, self.specific_expert_num,
-                                                self.input_dim, expert_dnn_hidden_units[-1], expert_dnn_hidden_units)
+        self.shared_experts = multi_module_list(
+            self.num_levels,
+            1,
+            self.specific_expert_num,
+            self.input_dim,
+            expert_dnn_hidden_units[-1],
+            expert_dnn_hidden_units,
+        )
 
         # 2. gates
         # gates for task-specific experts
         specific_gate_output_dim = self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
-            self.specific_gate_dnn = multi_module_list(self.num_levels, self.num_tasks, 1,
-                                                       self.input_dim, expert_dnn_hidden_units[-1],
-                                                       gate_dnn_hidden_units)
+            self.specific_gate_dnn = multi_module_list(
+                self.num_levels, self.num_tasks, 1, self.input_dim, expert_dnn_hidden_units[-1], gate_dnn_hidden_units
+            )
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.specific_gate_dnn.named_parameters()),
-                l2=l2_reg_dnn)
+                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.specific_gate_dnn.named_parameters()),
+                l2=l2_reg_dnn,
+            )
         self.specific_gate_dnn_final_layer = nn.ModuleList(
-            [nn.ModuleList([nn.Linear(
-                gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim if level_num == 0 else
-                expert_dnn_hidden_units[-1], specific_gate_output_dim, bias=False)
-                for _ in range(self.num_tasks)]) for level_num in range(self.num_levels)])
+            [
+                nn.ModuleList(
+                    [
+                        nn.Linear(
+                            gate_dnn_hidden_units[-1]
+                            if len(gate_dnn_hidden_units) > 0
+                            else self.input_dim
+                            if level_num == 0
+                            else expert_dnn_hidden_units[-1],
+                            specific_gate_output_dim,
+                            bias=False,
+                        )
+                        for _ in range(self.num_tasks)
+                    ]
+                )
+                for level_num in range(self.num_levels)
+            ]
+        )
 
         # gates for shared experts
         shared_gate_output_dim = self.num_tasks * self.specific_expert_num + self.shared_expert_num
         if len(gate_dnn_hidden_units) > 0:
-            self.shared_gate_dnn = nn.ModuleList([DNN(self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
-                                                      gate_dnn_hidden_units, activation=dnn_activation,
-                                                      l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                                                      init_std=init_std, device=device) for level_num in
-                                                  range(self.num_levels)])
+            self.shared_gate_dnn = nn.ModuleList(
+                [
+                    DNN(
+                        self.input_dim if level_num == 0 else expert_dnn_hidden_units[-1],
+                        gate_dnn_hidden_units,
+                        activation=dnn_activation,
+                        l2_reg=l2_reg_dnn,
+                        dropout_rate=dnn_dropout,
+                        use_bn=dnn_use_bn,
+                        init_std=init_std,
+                        device=device,
+                    )
+                    for level_num in range(self.num_levels)
+                ]
+            )
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.shared_gate_dnn.named_parameters()),
-                l2=l2_reg_dnn)
+                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.shared_gate_dnn.named_parameters()),
+                l2=l2_reg_dnn,
+            )
         self.shared_gate_dnn_final_layer = nn.ModuleList(
-            [nn.Linear(
-                gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim if level_num == 0 else
-                expert_dnn_hidden_units[-1], shared_gate_output_dim, bias=False)
-                for level_num in range(self.num_levels)])
+            [
+                nn.Linear(
+                    gate_dnn_hidden_units[-1]
+                    if len(gate_dnn_hidden_units) > 0
+                    else self.input_dim
+                    if level_num == 0
+                    else expert_dnn_hidden_units[-1],
+                    shared_gate_output_dim,
+                    bias=False,
+                )
+                for level_num in range(self.num_levels)
+            ]
+        )
 
         # 3. tower dnn (task-specific)
         if len(tower_dnn_hidden_units) > 0:
             self.tower_dnn = nn.ModuleList(
-                [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
-                     l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                     init_std=init_std, device=device) for _ in range(self.num_tasks)])
+                [
+                    DNN(
+                        expert_dnn_hidden_units[-1],
+                        tower_dnn_hidden_units,
+                        activation=dnn_activation,
+                        l2_reg=l2_reg_dnn,
+                        dropout_rate=dnn_dropout,
+                        use_bn=dnn_use_bn,
+                        init_std=init_std,
+                        device=device,
+                    )
+                    for _ in range(self.num_tasks)
+                ]
+            )
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
-                l2=l2_reg_dnn)
-        self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(
-            tower_dnn_hidden_units[-1] if len(tower_dnn_hidden_units) > 0 else expert_dnn_hidden_units[-1], 1,
-            bias=False)
-            for _ in range(self.num_tasks)])
+                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.tower_dnn.named_parameters()),
+                l2=l2_reg_dnn,
+            )
+        self.tower_dnn_final_layer = nn.ModuleList(
+            [
+                nn.Linear(
+                    tower_dnn_hidden_units[-1] if len(tower_dnn_hidden_units) > 0 else expert_dnn_hidden_units[-1],
+                    1,
+                    bias=False,
+                )
+                for _ in range(self.num_tasks)
+            ]
+        )
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
-        regularization_modules = [self.specific_experts, self.shared_experts, self.specific_gate_dnn_final_layer,
-                                  self.shared_gate_dnn_final_layer, self.tower_dnn_final_layer]
+        regularization_modules = [
+            self.specific_experts,
+            self.shared_experts,
+            self.specific_gate_dnn_final_layer,
+            self.shared_gate_dnn_final_layer,
+            self.tower_dnn_final_layer,
+        ]
         for module in regularization_modules:
             self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], module.named_parameters()), l2=l2_reg_dnn)
+                filter(lambda x: "weight" in x[0] and "bn" not in x[0], module.named_parameters()), l2=l2_reg_dnn
+            )
         self.to(device)
 
     # a single cgc Layer
@@ -166,8 +280,10 @@ class PLE(BaseModel):
         cgc_outs = []
         for i in range(self.num_tasks):
             # concat task-specific expert and task-shared expert
-            cur_experts_outputs = specific_expert_outputs[
-                                  i * self.specific_expert_num:(i + 1) * self.specific_expert_num] + shared_expert_outputs
+            cur_experts_outputs = (
+                specific_expert_outputs[i * self.specific_expert_num : (i + 1) * self.specific_expert_num]
+                + shared_expert_outputs
+            )
             cur_experts_outputs = torch.stack(cur_experts_outputs, 1)
 
             # gate dnn
@@ -194,8 +310,9 @@ class PLE(BaseModel):
         return cgc_outs
 
     def forward(self, X):
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
+        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict
+        )
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
 
         # repeat `dnn_input` for several times to generate cgc input
