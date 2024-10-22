@@ -7,10 +7,12 @@ from .interaction import (
     ConvLayer,
     CrossNet,
     CrossNetMix,
+    BilinearInteraction,
     InnerProductLayer,
     InteractingLayer,
     LogTransformLayer,
     OutterProductLayer,
+    SENETLayer,
 )
 from .sequence import AGRUCell, AttentionSequencePoolingLayer, AUGRUCell, DynamicGRU, KMaxPooling, SequencePoolingLayer
 from .utils import concat_fun

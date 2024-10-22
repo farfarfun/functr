@@ -8,12 +8,11 @@ Reference:
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 from ..inputs import (
     DenseFeat,
-    DynamicGRU,
-    F,
     SparseFeat,
     VarLenSparseFeat,
     combined_dnn_input,
@@ -22,7 +21,7 @@ from ..inputs import (
     get_dense_input,
     maxlen_lookup,
 )
-from ..layers import DNN, AttentionSequencePoolingLayer
+from ..layers import DNN, AttentionSequencePoolingLayer, DynamicGRU
 from .basemodel import BaseModel
 
 
