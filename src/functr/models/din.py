@@ -10,8 +10,8 @@ import torch.nn as nn
 
 from .basemodel import BaseModel
 from ..inputs import SparseFeat,VarLenSparseFeat,embedding_lookup,varlen_embedding_lookup,maxlen_lookup,get_varlen_pooling_list,combined_dnn_input
-from ..layers import DNN
-from ..layers.sequence import AttentionSequencePoolingLayer
+from ..layers import DNN, AttentionSequencePoolingLayer
+
 
 
 

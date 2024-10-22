@@ -11,7 +11,6 @@ import torch.nn as nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 from ..inputs import (
-    AttentionSequencePoolingLayer,
     DenseFeat,
     DynamicGRU,
     F,
@@ -23,7 +22,7 @@ from ..inputs import (
     get_dense_input,
     maxlen_lookup,
 )
-from ..layers import DNN
+from ..layers import DNN, AttentionSequencePoolingLayer
 from .basemodel import BaseModel
 
 

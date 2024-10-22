@@ -17,6 +17,12 @@ from .layers.utils import concat_fun
 DEFAULT_GROUP_NAME = "default_group"
 
 
+
+
+
+
+
+
 class SparseFeat(
     namedtuple(
         "SparseFeat", ["name", "vocabulary_size", "embedding_dim", "use_hash", "dtype", "embedding_name", "group_name"]
