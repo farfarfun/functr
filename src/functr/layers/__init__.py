@@ -8,6 +8,7 @@ from .interaction import (
     CrossNet,
     CrossNetMix,
     InnerProductLayer,
+    InteractingLayer,
     LogTransformLayer,
     OutterProductLayer,
 )
