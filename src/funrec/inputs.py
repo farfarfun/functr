@@ -19,7 +19,16 @@ DEFAULT_GROUP_NAME = "default_group"
 
 class SparseFeat(
     namedtuple(
-        "SparseFeat", ["name", "vocabulary_size", "embedding_dim", "use_hash", "dtype", "embedding_name", "group_name"]
+        "SparseFeat",
+        [
+            "name",
+            "vocabulary_size",
+            "embedding_dim",
+            "use_hash",
+            "dtype",
+            "embedding_name",
+            "group_name",
+        ],
     )
 ):
     __slots__ = ()
@@ -43,18 +52,29 @@ class SparseFeat(
                 "Notice! Feature Hashing on the fly currently is not supported in torch version,you can use tensorflow version!"
             )
         return super(SparseFeat, cls).__new__(
-            cls, name, vocabulary_size, embedding_dim, use_hash, dtype, embedding_name, group_name
+            cls,
+            name,
+            vocabulary_size,
+            embedding_dim,
+            use_hash,
+            dtype,
+            embedding_name,
+            group_name,
         )
 
     def __hash__(self):
         return self.name.__hash__()
 
 
-class VarLenSparseFeat(namedtuple("VarLenSparseFeat", ["sparsefeat", "maxlen", "combiner", "length_name"])):
+class VarLenSparseFeat(
+    namedtuple("VarLenSparseFeat", ["sparsefeat", "maxlen", "combiner", "length_name"])
+):
     __slots__ = ()
 
     def __new__(cls, sparsefeat, maxlen, combiner="mean", length_name=None):
-        return super(VarLenSparseFeat, cls).__new__(cls, sparsefeat, maxlen, combiner, length_name)
+        return super(VarLenSparseFeat, cls).__new__(
+            cls, sparsefeat, maxlen, combiner, length_name
+        )
 
     @property
     def name(self):
@@ -136,8 +156,12 @@ def build_input_features(feature_columns):
 
 def combined_dnn_input(sparse_embedding_list, dense_value_list):
     if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
-        sparse_dnn_input = torch.flatten(torch.cat(sparse_embedding_list, dim=-1), start_dim=1)
-        dense_dnn_input = torch.flatten(torch.cat(dense_value_list, dim=-1), start_dim=1)
+        sparse_dnn_input = torch.flatten(
+            torch.cat(sparse_embedding_list, dim=-1), start_dim=1
+        )
+        dense_dnn_input = torch.flatten(
+            torch.cat(dense_value_list, dim=-1), start_dim=1
+        )
         return concat_fun([sparse_dnn_input, dense_dnn_input])
     elif len(sparse_embedding_list) > 0:
         return torch.flatten(torch.cat(sparse_embedding_list, dim=-1), start_dim=1)
@@ -147,36 +171,58 @@ def combined_dnn_input(sparse_embedding_list, dense_value_list):
         raise NotImplementedError
 
 
-def get_varlen_pooling_list(embedding_dict, features, feature_index, varlen_sparse_feature_columns, device):
+def get_varlen_pooling_list(
+    embedding_dict, features, feature_index, varlen_sparse_feature_columns, device
+):
     varlen_sparse_embedding_list = []
     for feat in varlen_sparse_feature_columns:
         seq_emb = embedding_dict[feat.name]
         if feat.length_name is None:
-            seq_mask = features[:, feature_index[feat.name][0] : feature_index[feat.name][1]].long() != 0
+            seq_mask = (
+                features[
+                    :, feature_index[feat.name][0] : feature_index[feat.name][1]
+                ].long()
+                != 0
+            )
 
-            emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=True, device=device)([seq_emb, seq_mask])
+            emb = SequencePoolingLayer(
+                mode=feat.combiner, supports_masking=True, device=device
+            )([seq_emb, seq_mask])
         else:
-            seq_length = features[:, feature_index[feat.length_name][0] : feature_index[feat.length_name][1]].long()
-            emb = SequencePoolingLayer(mode=feat.combiner, supports_masking=False, device=device)([seq_emb, seq_length])
+            seq_length = features[
+                :,
+                feature_index[feat.length_name][0] : feature_index[feat.length_name][1],
+            ].long()
+            emb = SequencePoolingLayer(
+                mode=feat.combiner, supports_masking=False, device=device
+            )([seq_emb, seq_length])
         varlen_sparse_embedding_list.append(emb)
     return varlen_sparse_embedding_list
 
 
-def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, sparse=False, device="cpu"):
+def create_embedding_matrix(
+    feature_columns, init_std=0.0001, linear=False, sparse=False, device="cpu"
+):
     # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
     # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
     sparse_feature_columns = (
-        list(filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
+        list(filter(lambda x: isinstance(x, SparseFeat), feature_columns))
+        if len(feature_columns)
+        else []
     )
 
     varlen_sparse_feature_columns = (
-        list(filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns)) if len(feature_columns) else []
+        list(filter(lambda x: isinstance(x, VarLenSparseFeat), feature_columns))
+        if len(feature_columns)
+        else []
     )
 
     embedding_dict = nn.ModuleDict(
         {
             feat.embedding_name: nn.Embedding(
-                feat.vocabulary_size, feat.embedding_dim if not linear else 1, sparse=sparse
+                feat.vocabulary_size,
+                feat.embedding_dim if not linear else 1,
+                sparse=sparse,
             )
             for feat in sparse_feature_columns + varlen_sparse_feature_columns
         }
@@ -229,7 +275,9 @@ def embedding_lookup(
     return group_embedding_dict
 
 
-def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_sparse_feature_columns):
+def varlen_embedding_lookup(
+    X, embedding_dict, sequence_input_dict, varlen_sparse_feature_columns
+):
     varlen_embedding_vec_dict = {}
     for fc in varlen_sparse_feature_columns:
         feature_name = fc.name
@@ -248,7 +296,11 @@ def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_spars
 
 
 def get_dense_input(X, features, feature_columns):
-    dense_feature_columns = list(filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if feature_columns else []
+    dense_feature_columns = (
+        list(filter(lambda x: isinstance(x, DenseFeat), feature_columns))
+        if feature_columns
+        else []
+    )
     dense_input_list = []
     for fc in dense_feature_columns:
         lookup_idx = np.array(features[fc.name])
@@ -259,6 +311,8 @@ def get_dense_input(X, features, feature_columns):
 
 def maxlen_lookup(X, sparse_input_dict, maxlen_column):
     if maxlen_column is None or len(maxlen_column) == 0:
-        raise ValueError("please add max length column for VarLenSparseFeat of DIN/DIEN input")
+        raise ValueError(
+            "please add max length column for VarLenSparseFeat of DIN/DIEN input"
+        )
     lookup_idx = np.array(sparse_input_dict[maxlen_column[0]])
     return X[:, lookup_idx[0] : lookup_idx[1]].long()

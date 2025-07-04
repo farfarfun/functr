@@ -9,8 +9,22 @@ from .core import Conv2dSame
 from .sequence import KMaxPooling
 
 
-__all__ = ['FM', 'BilinearInteraction', 'SENETLayer', 'CIN', 'AFMLayer', 'InteractingLayer', 'CrossNet', 'CrossNetMix',
-           'InnerProductLayer', 'OutterProductLayer', 'ConvLayer', 'LogTransformLayer', 'BiInteractionPooling']
+__all__ = [
+    "FM",
+    "BilinearInteraction",
+    "SENETLayer",
+    "CIN",
+    "AFMLayer",
+    "InteractingLayer",
+    "CrossNet",
+    "CrossNetMix",
+    "InnerProductLayer",
+    "OutterProductLayer",
+    "ConvLayer",
+    "LogTransformLayer",
+    "BiInteractionPooling",
+]
+
 
 class FM(nn.Module):
     """Factorization Machine models pairwise (order-2) feature interactions
@@ -56,8 +70,12 @@ class BiInteractionPooling(nn.Module):
 
     def forward(self, inputs):
         concated_embeds_value = inputs
-        square_of_sum = torch.pow(torch.sum(concated_embeds_value, dim=1, keepdim=True), 2)
-        sum_of_square = torch.sum(concated_embeds_value * concated_embeds_value, dim=1, keepdim=True)
+        square_of_sum = torch.pow(
+            torch.sum(concated_embeds_value, dim=1, keepdim=True), 2
+        )
+        sum_of_square = torch.sum(
+            concated_embeds_value * concated_embeds_value, dim=1, keepdim=True
+        )
         cross_term = 0.5 * (square_of_sum - sum_of_square)
         return cross_term
 
@@ -93,7 +111,10 @@ class SENETLayer(nn.Module):
 
     def forward(self, inputs):
         if len(inputs.shape) != 3:
-            raise ValueError("Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions"
+                % (len(inputs.shape))
+            )
         Z = torch.mean(inputs, dim=-1, out=None)
         A = self.excitation(Z)
         V = torch.mul(inputs, torch.unsqueeze(A, dim=2))
@@ -117,7 +138,14 @@ class BilinearInteraction(nn.Module):
     Tongwen](https://arxiv.org/pdf/1905.09433.pdf)
     """
 
-    def __init__(self, filed_size, embedding_size, bilinear_type="interaction", seed=1024, device="cpu"):
+    def __init__(
+        self,
+        filed_size,
+        embedding_size,
+        bilinear_type="interaction",
+        seed=1024,
+        device="cpu",
+    ):
         super(BilinearInteraction, self).__init__()
         self.bilinear_type = bilinear_type
         self.seed = seed
@@ -126,20 +154,30 @@ class BilinearInteraction(nn.Module):
             self.bilinear = nn.Linear(embedding_size, embedding_size, bias=False)
         elif self.bilinear_type == "each":
             for _ in range(filed_size):
-                self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+                self.bilinear.append(
+                    nn.Linear(embedding_size, embedding_size, bias=False)
+                )
         elif self.bilinear_type == "interaction":
             for _, _ in itertools.combinations(range(filed_size), 2):
-                self.bilinear.append(nn.Linear(embedding_size, embedding_size, bias=False))
+                self.bilinear.append(
+                    nn.Linear(embedding_size, embedding_size, bias=False)
+                )
         else:
             raise NotImplementedError
         self.to(device)
 
     def forward(self, inputs):
         if len(inputs.shape) != 3:
-            raise ValueError("Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions"
+                % (len(inputs.shape))
+            )
         inputs = torch.split(inputs, 1, dim=1)
         if self.bilinear_type == "all":
-            p = [torch.mul(self.bilinear(v_i), v_j) for v_i, v_j in itertools.combinations(inputs, 2)]
+            p = [
+                torch.mul(self.bilinear(v_i), v_j)
+                for v_i, v_j in itertools.combinations(inputs, 2)
+            ]
         elif self.bilinear_type == "each":
             p = [
                 torch.mul(self.bilinear[i](inputs[i]), inputs[j])
@@ -147,7 +185,8 @@ class BilinearInteraction(nn.Module):
             ]
         elif self.bilinear_type == "interaction":
             p = [
-                torch.mul(bilinear(v[0]), v[1]) for v, bilinear in zip(itertools.combinations(inputs, 2), self.bilinear)
+                torch.mul(bilinear(v[0]), v[1])
+                for v, bilinear in zip(itertools.combinations(inputs, 2), self.bilinear)
             ]
         else:
             raise NotImplementedError
@@ -182,7 +221,9 @@ class CIN(nn.Module):
     ):
         super(CIN, self).__init__()
         if len(layer_size) == 0:
-            raise ValueError("layer_size must be a list(tuple) of length greater than 1")
+            raise ValueError(
+                "layer_size must be a list(tuple) of length greater than 1"
+            )
 
         self.layer_size = layer_size
         self.field_nums = [field_size]
@@ -193,11 +234,15 @@ class CIN(nn.Module):
 
         self.conv1ds = nn.ModuleList()
         for i, size in enumerate(self.layer_size):
-            self.conv1ds.append(nn.Conv1d(self.field_nums[-1] * self.field_nums[0], size, 1))
+            self.conv1ds.append(
+                nn.Conv1d(self.field_nums[-1] * self.field_nums[0], size, 1)
+            )
 
             if self.split_half:
                 if i != len(self.layer_size) - 1 and size % 2 > 0:
-                    raise ValueError("layer_size must be even number except for the last layer when split_half=True")
+                    raise ValueError(
+                        "layer_size must be even number except for the last layer when split_half=True"
+                    )
 
                 self.field_nums.append(size // 2)
             else:
@@ -209,7 +254,10 @@ class CIN(nn.Module):
 
     def forward(self, inputs):
         if len(inputs.shape) != 3:
-            raise ValueError("Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions"
+                % (len(inputs.shape))
+            )
         batch_size = inputs.shape[0]
         dim = inputs.shape[-1]
         hidden_nn_layers = [inputs]
@@ -219,7 +267,11 @@ class CIN(nn.Module):
             # x^(k-1) * x^0
             x = torch.einsum("bhd,bmd->bhmd", hidden_nn_layers[-1], hidden_nn_layers[0])
             # x.shape = (batch_size , hi * m, dim)
-            x = x.reshape(batch_size, hidden_nn_layers[-1].shape[1] * hidden_nn_layers[0].shape[1], dim)
+            x = x.reshape(
+                batch_size,
+                hidden_nn_layers[-1].shape[1] * hidden_nn_layers[0].shape[1],
+                dim,
+            )
             # x.shape = (batch_size , hi, dim)
             x = self.conv1ds[i](x)
 
@@ -230,7 +282,9 @@ class CIN(nn.Module):
 
             if self.split_half:
                 if i != len(self.layer_size) - 1:
-                    next_hidden, direct_connect = torch.split(curr_out, 2 * [size // 2], 1)
+                    next_hidden, direct_connect = torch.split(
+                        curr_out, 2 * [size // 2], 1
+                    )
                 else:
                     direct_connect = curr_out
                     next_hidden = 0
@@ -267,7 +321,15 @@ class AFMLayer(nn.Module):
         Interactions via Attention Networks](https://arxiv.org/pdf/1708.04617.pdf)
     """
 
-    def __init__(self, in_features, attention_factor=4, l2_reg_w=0, dropout_rate=0, seed=1024, device="cpu"):
+    def __init__(
+        self,
+        in_features,
+        attention_factor=4,
+        l2_reg_w=0,
+        dropout_rate=0,
+        seed=1024,
+        device="cpu",
+    ):
         super(AFMLayer, self).__init__()
         self.attention_factor = attention_factor
         self.l2_reg_w = l2_reg_w
@@ -275,7 +337,9 @@ class AFMLayer(nn.Module):
         self.seed = seed
         embedding_size = in_features
 
-        self.attention_W = nn.Parameter(torch.Tensor(embedding_size, self.attention_factor))
+        self.attention_W = nn.Parameter(
+            torch.Tensor(embedding_size, self.attention_factor)
+        )
 
         self.attention_b = nn.Parameter(torch.Tensor(self.attention_factor))
 
@@ -311,7 +375,10 @@ class AFMLayer(nn.Module):
         inner_product = p * q
 
         bi_interaction = inner_product
-        attention_temp = F.relu(torch.tensordot(bi_interaction, self.attention_W, dims=([-1], [0])) + self.attention_b)
+        attention_temp = F.relu(
+            torch.tensordot(bi_interaction, self.attention_W, dims=([-1], [0]))
+            + self.attention_b
+        )
 
         self.normalized_att_score = F.softmax(
             torch.tensordot(attention_temp, self.projection_h, dims=([-1], [0])), dim=1
@@ -339,7 +406,15 @@ class InteractingLayer(nn.Module):
           - [Song W, Shi C, Xiao Z, et al. AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks[J]. arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
     """
 
-    def __init__(self, embedding_size, head_num=2, use_res=True, scaling=False, seed=1024, device="cpu"):
+    def __init__(
+        self,
+        embedding_size,
+        head_num=2,
+        use_res=True,
+        scaling=False,
+        seed=1024,
+        device="cpu",
+    ):
         super(InteractingLayer, self).__init__()
         if head_num <= 0:
             raise ValueError("head_num must be a int > 0")
@@ -364,7 +439,10 @@ class InteractingLayer(nn.Module):
 
     def forward(self, inputs):
         if len(inputs.shape) != 3:
-            raise ValueError("Unexpected inputs dimensions %d, expect to be 3 dimensions" % (len(inputs.shape)))
+            raise ValueError(
+                "Unexpected inputs dimensions %d, expect to be 3 dimensions"
+                % (len(inputs.shape))
+            )
 
         # None F D
         querys = torch.tensordot(inputs, self.W_Query, dims=([-1], [0]))
@@ -376,11 +454,17 @@ class InteractingLayer(nn.Module):
         keys = torch.stack(torch.split(keys, self.att_embedding_size, dim=2))
         values = torch.stack(torch.split(values, self.att_embedding_size, dim=2))
 
-        inner_product = torch.einsum("bnik,bnjk->bnij", querys, keys)  # head_num None F F
+        inner_product = torch.einsum(
+            "bnik,bnjk->bnij", querys, keys
+        )  # head_num None F F
         if self.scaling:
             inner_product /= self.att_embedding_size**0.5
-        self.normalized_att_scores = F.softmax(inner_product, dim=-1)  # head_num None F F
-        result = torch.matmul(self.normalized_att_scores, values)  # head_num None F D/head_num
+        self.normalized_att_scores = F.softmax(
+            inner_product, dim=-1
+        )  # head_num None F F
+        result = torch.matmul(
+            self.normalized_att_scores, values
+        )  # head_num None F D/head_num
 
         result = torch.cat(
             torch.split(
@@ -416,7 +500,14 @@ class CrossNet(nn.Module):
         - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
     """
 
-    def __init__(self, in_features, layer_num=2, parameterization="vector", seed=1024, device="cpu"):
+    def __init__(
+        self,
+        in_features,
+        layer_num=2,
+        parameterization="vector",
+        seed=1024,
+        device="cpu",
+    ):
         super(CrossNet, self).__init__()
         self.layer_num = layer_num
         self.parameterization = parameterization
@@ -425,7 +516,9 @@ class CrossNet(nn.Module):
             self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
         elif self.parameterization == "matrix":
             # weight matrix in DCN-M.  (in_features, in_features)
-            self.kernels = nn.Parameter(torch.Tensor(self.layer_num, in_features, in_features))
+            self.kernels = nn.Parameter(
+                torch.Tensor(self.layer_num, in_features, in_features)
+            )
         else:  # error
             raise ValueError("parameterization should be 'vector' or 'matrix'")
 
@@ -447,7 +540,9 @@ class CrossNet(nn.Module):
                 dot_ = torch.matmul(x_0, xl_w)
                 x_l = dot_ + self.bias[i] + x_l
             elif self.parameterization == "matrix":
-                xl_w = torch.matmul(self.kernels[i], x_l)  # W * xi  (bs, in_features, 1)
+                xl_w = torch.matmul(
+                    self.kernels[i], x_l
+                )  # W * xi  (bs, in_features, 1)
                 dot_ = xl_w + self.bias[i]  # W * xi + b
                 x_l = x_0 * dot_ + x_l  # x0 · (W * xi + b) +xl  Hadamard-product
             else:  # error
@@ -474,18 +569,28 @@ class CrossNetMix(nn.Module):
       - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
     """
 
-    def __init__(self, in_features, low_rank=32, num_experts=4, layer_num=2, device="cpu"):
+    def __init__(
+        self, in_features, low_rank=32, num_experts=4, layer_num=2, device="cpu"
+    ):
         super(CrossNetMix, self).__init__()
         self.layer_num = layer_num
         self.num_experts = num_experts
 
         # U: (in_features, low_rank)
-        self.U_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
+        self.U_list = nn.Parameter(
+            torch.Tensor(self.layer_num, num_experts, in_features, low_rank)
+        )
         # V: (in_features, low_rank)
-        self.V_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, in_features, low_rank))
+        self.V_list = nn.Parameter(
+            torch.Tensor(self.layer_num, num_experts, in_features, low_rank)
+        )
         # C: (low_rank, low_rank)
-        self.C_list = nn.Parameter(torch.Tensor(self.layer_num, num_experts, low_rank, low_rank))
-        self.gating = nn.ModuleList([nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)])
+        self.C_list = nn.Parameter(
+            torch.Tensor(self.layer_num, num_experts, low_rank, low_rank)
+        )
+        self.gating = nn.ModuleList(
+            [nn.Linear(in_features, 1, bias=False) for i in range(self.num_experts)]
+        )
 
         self.bias = nn.Parameter(torch.Tensor(self.layer_num, in_features, 1))
 
@@ -512,7 +617,9 @@ class CrossNetMix(nn.Module):
 
                 # (2) E(x_l)
                 # project the input x_l to $\mathbb{R}^{r}$
-                v_x = torch.matmul(self.V_list[i][expert_id].t(), x_l)  # (bs, low_rank, 1)
+                v_x = torch.matmul(
+                    self.V_list[i][expert_id].t(), x_l
+                )  # (bs, low_rank, 1)
 
                 # nonlinear activation in low rank space
                 v_x = torch.tanh(v_x)
@@ -520,7 +627,9 @@ class CrossNetMix(nn.Module):
                 v_x = torch.tanh(v_x)
 
                 # project back to $\mathbb{R}^{d}$
-                uv_x = torch.matmul(self.U_list[i][expert_id], v_x)  # (bs, in_features, 1)
+                uv_x = torch.matmul(
+                    self.U_list[i][expert_id], v_x
+                )  # (bs, in_features, 1)
 
                 dot_ = uv_x + self.bias[i]
                 dot_ = x_0 * dot_  # Hadamard-product
@@ -528,9 +637,15 @@ class CrossNetMix(nn.Module):
                 output_of_experts.append(dot_.squeeze(2))
 
             # (3) mixture of low-rank experts
-            output_of_experts = torch.stack(output_of_experts, 2)  # (bs, in_features, num_experts)
-            gating_score_of_experts = torch.stack(gating_score_of_experts, 1)  # (bs, num_experts, 1)
-            moe_out = torch.matmul(output_of_experts, gating_score_of_experts.softmax(1))
+            output_of_experts = torch.stack(
+                output_of_experts, 2
+            )  # (bs, in_features, num_experts)
+            gating_score_of_experts = torch.stack(
+                gating_score_of_experts, 1
+            )  # (bs, num_experts, 1)
+            moe_out = torch.matmul(
+                output_of_experts, gating_score_of_experts.softmax(1)
+            )
             x_l = moe_out + x_l  # (bs, in_features, 1)
 
         x_l = x_l.squeeze()  # (bs, in_features)
@@ -591,7 +706,9 @@ class OutterProductLayer(nn.Module):
             - [Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.](https://arxiv.org/pdf/1611.00144.pdf)
     """
 
-    def __init__(self, field_size, embedding_size, kernel_type="mat", seed=1024, device="cpu"):
+    def __init__(
+        self, field_size, embedding_size, kernel_type="mat", seed=1024, device="cpu"
+    ):
         super(OutterProductLayer, self).__init__()
         self.kernel_type = kernel_type
 
@@ -690,14 +807,21 @@ class ConvLayer(nn.Module):
             width = conv_kernel_width[i - 1]
             k = max(1, int((1 - pow(i / l, l - i)) * n)) if i < l else 3
             module_list.append(
-                Conv2dSame(in_channels=in_channels, out_channels=out_channels, kernel_size=(width, 1), stride=1).to(
-                    self.device
-                )
+                Conv2dSame(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=(width, 1),
+                    stride=1,
+                ).to(self.device)
             )
             module_list.append(torch.nn.Tanh().to(self.device))
 
             # KMaxPooling, extract top_k, returns tensors values
-            module_list.append(KMaxPooling(k=min(k, filed_shape), axis=2, device=self.device).to(self.device))
+            module_list.append(
+                KMaxPooling(k=min(k, filed_shape), axis=2, device=self.device).to(
+                    self.device
+                )
+            )
             filed_shape = min(k, filed_shape)
         self.conv_layer = nn.Sequential(*module_list)
         self.to(device)

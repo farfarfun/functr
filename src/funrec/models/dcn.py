@@ -85,7 +85,9 @@ class DCN(BaseModel):
             device=device,
         )
         if len(self.dnn_hidden_units) > 0 and self.cross_num > 0:
-            dnn_linear_in_feature = self.compute_input_dim(dnn_feature_columns) + dnn_hidden_units[-1]
+            dnn_linear_in_feature = (
+                self.compute_input_dim(dnn_feature_columns) + dnn_hidden_units[-1]
+            )
         elif len(self.dnn_hidden_units) > 0:
             dnn_linear_in_feature = dnn_hidden_units[-1]
         elif self.cross_num > 0:
@@ -99,7 +101,11 @@ class DCN(BaseModel):
             device=device,
         )
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.dnn.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
         self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_linear)
         self.add_regularization_weight(self.crossnet.kernels, l2=l2_reg_cross)

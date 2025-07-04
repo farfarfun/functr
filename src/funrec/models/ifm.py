@@ -80,32 +80,53 @@ class IFM(BaseModel):
             device=device,
         )
         self.sparse_feat_num = len(
-            list(filter(lambda x: isinstance(x, SparseFeat) or isinstance(x, VarLenSparseFeat), dnn_feature_columns))
+            list(
+                filter(
+                    lambda x: isinstance(x, SparseFeat)
+                    or isinstance(x, VarLenSparseFeat),
+                    dnn_feature_columns,
+                )
+            )
         )
-        self.transform_weight_matrix_P = nn.Linear(dnn_hidden_units[-1], self.sparse_feat_num, bias=False).to(device)
+        self.transform_weight_matrix_P = nn.Linear(
+            dnn_hidden_units[-1], self.sparse_feat_num, bias=False
+        ).to(device)
 
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.factor_estimating_net.named_parameters()),
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.factor_estimating_net.named_parameters(),
+            ),
             l2=l2_reg_dnn,
         )
-        self.add_regularization_weight(self.transform_weight_matrix_P.weight, l2=l2_reg_dnn)
+        self.add_regularization_weight(
+            self.transform_weight_matrix_P.weight, l2=l2_reg_dnn
+        )
 
         self.to(device)
 
     def forward(self, X):
-        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
+        sparse_embedding_list, _ = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict
+        )
         if not len(sparse_embedding_list) > 0:
             raise ValueError("there are no sparse features")
 
-        dnn_input = combined_dnn_input(sparse_embedding_list, [])  # (batch_size, feat_num * embedding_size)
+        dnn_input = combined_dnn_input(
+            sparse_embedding_list, []
+        )  # (batch_size, feat_num * embedding_size)
         dnn_output = self.factor_estimating_net(dnn_input)
         dnn_output = self.transform_weight_matrix_P(dnn_output)  # m'_{x}
-        input_aware_factor = self.sparse_feat_num * dnn_output.softmax(1)  # input_aware_factor m_{x,i}
+        input_aware_factor = self.sparse_feat_num * dnn_output.softmax(
+            1
+        )  # input_aware_factor m_{x,i}
 
         logit = self.linear_model(X, sparse_feat_refine_weight=input_aware_factor)
 
         fm_input = torch.cat(sparse_embedding_list, dim=1)
-        refined_fm_input = fm_input * input_aware_factor.unsqueeze(-1)  # \textbf{v}_{x,i}=m_{x,i}\textbf{v}_i
+        refined_fm_input = fm_input * input_aware_factor.unsqueeze(
+            -1
+        )  # \textbf{v}_{x,i}=m_{x,i}\textbf{v}_i
         logit += self.fm(refined_fm_input)
 
         y_pred = self.out(logit)

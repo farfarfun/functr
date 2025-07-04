@@ -69,7 +69,9 @@ class FiBiNET(BaseModel):
         self.dnn_feature_columns = dnn_feature_columns
         self.field_size = len(self.embedding_dict)
         self.SE = SENETLayer(self.field_size, reduction_ratio, seed, device)
-        self.Bilinear = BilinearInteraction(self.field_size, self.embedding_size, bilinear_type, seed, device)
+        self.Bilinear = BilinearInteraction(
+            self.field_size, self.embedding_size, bilinear_type, seed, device
+        )
         self.dnn = DNN(
             self.compute_input_dim(dnn_feature_columns),
             dnn_hidden_units,
@@ -82,14 +84,23 @@ class FiBiNET(BaseModel):
         )
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
 
-    def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True):
+    def compute_input_dim(
+        self, feature_columns, include_sparse=True, include_dense=True
+    ):
         sparse_feature_columns = (
-            list(filter(lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)), feature_columns))
+            list(
+                filter(
+                    lambda x: isinstance(x, (SparseFeat, VarLenSparseFeat)),
+                    feature_columns,
+                )
+            )
             if len(feature_columns)
             else []
         )
         dense_feature_columns = (
-            list(filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
+            list(filter(lambda x: isinstance(x, DenseFeat), feature_columns))
+            if len(feature_columns)
+            else []
         )
         field_size = len(sparse_feature_columns)
 
@@ -116,12 +127,16 @@ class FiBiNET(BaseModel):
         bilinear_out = self.Bilinear(sparse_embedding_input)
 
         linear_logit = self.linear_model(X)
-        temp = torch.split(torch.cat((senet_bilinear_out, bilinear_out), dim=1), 1, dim=1)
+        temp = torch.split(
+            torch.cat((senet_bilinear_out, bilinear_out), dim=1), 1, dim=1
+        )
         dnn_input = combined_dnn_input(temp, dense_value_list)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
 
-        if len(self.linear_feature_columns) > 0 and len(self.dnn_feature_columns) > 0:  # linear + dnn
+        if (
+            len(self.linear_feature_columns) > 0 and len(self.dnn_feature_columns) > 0
+        ):  # linear + dnn
             final_logit = linear_logit + dnn_logit
         elif len(self.linear_feature_columns) == 0:
             final_logit = dnn_logit

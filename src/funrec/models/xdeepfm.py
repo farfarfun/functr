@@ -89,7 +89,11 @@ class xDeepFM(BaseModel):
             )
             self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    self.dnn.named_parameters(),
+                ),
+                l2=l2_reg_dnn,
             )
 
             self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
@@ -102,10 +106,19 @@ class xDeepFM(BaseModel):
                 self.featuremap_num = sum(cin_layer_size[:-1]) // 2 + cin_layer_size[-1]
             else:
                 self.featuremap_num = sum(cin_layer_size)
-            self.cin = CIN(field_num, cin_layer_size, cin_activation, cin_split_half, l2_reg_cin, seed, device=device)
+            self.cin = CIN(
+                field_num,
+                cin_layer_size,
+                cin_activation,
+                cin_split_half,
+                l2_reg_cin,
+                seed,
+                device=device,
+            )
             self.cin_linear = nn.Linear(self.featuremap_num, 1, bias=False).to(device)
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0], self.cin.named_parameters()), l2=l2_reg_cin
+                filter(lambda x: "weight" in x[0], self.cin.named_parameters()),
+                l2=l2_reg_cin,
             )
 
         self.to(device)
@@ -125,13 +138,21 @@ class xDeepFM(BaseModel):
             dnn_output = self.dnn(dnn_input)
             dnn_logit = self.dnn_linear(dnn_output)
 
-        if len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) == 0:  # only linear
+        if (
+            len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) == 0
+        ):  # only linear
             final_logit = linear_logit
-        elif len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) > 0:  # linear + CIN
+        elif (
+            len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) > 0
+        ):  # linear + CIN
             final_logit = linear_logit + cin_logit
-        elif len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) == 0:  # linear +　Deep
+        elif (
+            len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) == 0
+        ):  # linear +　Deep
             final_logit = linear_logit + dnn_logit
-        elif len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) > 0:  # linear + CIN + Deep
+        elif (
+            len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) > 0
+        ):  # linear + CIN + Deep
             final_logit = linear_logit + dnn_logit + cin_logit
         else:
             raise NotImplementedError

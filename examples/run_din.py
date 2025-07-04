@@ -18,8 +18,14 @@ def get_xy_fd():
     ]
 
     feature_columns += [
-        VarLenSparseFeat(SparseFeat("hist_item", 3 + 1, embedding_dim=8), 4, length_name="seq_length"),
-        VarLenSparseFeat(SparseFeat("hist_item_gender", 2 + 1, embedding_dim=8), 4, length_name="seq_length"),
+        VarLenSparseFeat(
+            SparseFeat("hist_item", 3 + 1, embedding_dim=8), 4, length_name="seq_length"
+        ),
+        VarLenSparseFeat(
+            SparseFeat("hist_item_gender", 2 + 1, embedding_dim=8),
+            4,
+            length_name="seq_length",
+        ),
     ]
     behavior_feature_list = ["item", "item_gender"]
     uid = np.array([0, 1, 2])
@@ -56,6 +62,11 @@ if __name__ == "__main__":
         print("cuda ready...")
         device = "cuda:0"
 
-    model = DIN(feature_columns, behavior_feature_list, device=device, att_weight_normalization=True)
+    model = DIN(
+        feature_columns,
+        behavior_feature_list,
+        device=device,
+        att_weight_normalization=True,
+    )
     model.compile("adagrad", "binary_crossentropy", metrics=["binary_crossentropy"])
     history = model.fit(x, y, batch_size=3, epochs=10, verbose=2, validation_split=0.0)

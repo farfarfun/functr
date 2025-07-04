@@ -64,7 +64,14 @@ class AFM(BaseModel):
         self.use_attention = use_attention
 
         if use_attention:
-            self.fm = AFMLayer(self.embedding_size, attention_factor, l2_reg_att, afm_dropout, seed, device)
+            self.fm = AFMLayer(
+                self.embedding_size,
+                attention_factor,
+                l2_reg_att,
+                afm_dropout,
+                seed,
+                device,
+            )
             self.add_regularization_weight(self.fm.attention_W, l2=l2_reg_att)
         else:
             self.fm = FM()

@@ -46,13 +46,23 @@ class ModelCheckpoint(ModelCheckpoint):
             if self.save_best_only:
                 current = logs.get(self.monitor)
                 if current is None:
-                    print("Can save best model only with %s available, skipping." % self.monitor)
+                    print(
+                        "Can save best model only with %s available, skipping."
+                        % self.monitor
+                    )
                 else:
                     if self.monitor_op(current, self.best):
                         if self.verbose > 0:
                             print(
                                 "Epoch %05d: %s improved from %0.5f to %0.5f,"
-                                " saving model to %s" % (epoch + 1, self.monitor, self.best, current, filepath)
+                                " saving model to %s"
+                                % (
+                                    epoch + 1,
+                                    self.monitor,
+                                    self.best,
+                                    current,
+                                    filepath,
+                                )
                             )
                         self.best = current
                         if self.save_weights_only:
@@ -61,7 +71,10 @@ class ModelCheckpoint(ModelCheckpoint):
                             torch.save(self.model, filepath)
                     else:
                         if self.verbose > 0:
-                            print("Epoch %05d: %s did not improve from %0.5f" % (epoch + 1, self.monitor, self.best))
+                            print(
+                                "Epoch %05d: %s did not improve from %0.5f"
+                                % (epoch + 1, self.monitor, self.best)
+                            )
             else:
                 if self.verbose > 0:
                     print("Epoch %05d: saving model to %s" % (epoch + 1, filepath))

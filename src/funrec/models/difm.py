@@ -74,7 +74,9 @@ class DIFM(BaseModel):
         self.fm = FM()
 
         # InteractingLayer (used in AutoInt) = multi-head self-attention + Residual Network
-        self.vector_wise_net = InteractingLayer(self.embedding_size, att_head_num, att_res, scaling=True, device=device)
+        self.vector_wise_net = InteractingLayer(
+            self.embedding_size, att_head_num, att_res, scaling=True, device=device
+        )
 
         self.bit_wise_net = DNN(
             self.compute_input_dim(dnn_feature_columns, include_dense=False),
@@ -87,28 +89,49 @@ class DIFM(BaseModel):
             device=device,
         )
         self.sparse_feat_num = len(
-            list(filter(lambda x: isinstance(x, SparseFeat) or isinstance(x, VarLenSparseFeat), dnn_feature_columns))
+            list(
+                filter(
+                    lambda x: isinstance(x, SparseFeat)
+                    or isinstance(x, VarLenSparseFeat),
+                    dnn_feature_columns,
+                )
+            )
         )
 
         self.transform_matrix_P_vec = nn.Linear(
             self.sparse_feat_num * self.embedding_size, self.sparse_feat_num, bias=False
         ).to(device)
-        self.transform_matrix_P_bit = nn.Linear(dnn_hidden_units[-1], self.sparse_feat_num, bias=False).to(device)
+        self.transform_matrix_P_bit = nn.Linear(
+            dnn_hidden_units[-1], self.sparse_feat_num, bias=False
+        ).to(device)
 
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.vector_wise_net.named_parameters()),
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.vector_wise_net.named_parameters(),
+            ),
             l2=l2_reg_dnn,
         )
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.bit_wise_net.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.bit_wise_net.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
-        self.add_regularization_weight(self.transform_matrix_P_vec.weight, l2=l2_reg_dnn)
-        self.add_regularization_weight(self.transform_matrix_P_bit.weight, l2=l2_reg_dnn)
+        self.add_regularization_weight(
+            self.transform_matrix_P_vec.weight, l2=l2_reg_dnn
+        )
+        self.add_regularization_weight(
+            self.transform_matrix_P_bit.weight, l2=l2_reg_dnn
+        )
 
         self.to(device)
 
     def forward(self, X):
-        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
+        sparse_embedding_list, _ = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict
+        )
         if not len(sparse_embedding_list) > 0:
             raise ValueError("there are no sparse features")
 
@@ -126,7 +149,9 @@ class DIFM(BaseModel):
         logit = self.linear_model(X, sparse_feat_refine_weight=m_x)
 
         fm_input = torch.cat(sparse_embedding_list, dim=1)
-        refined_fm_input = fm_input * m_x.unsqueeze(-1)  # \textbf{v}_{x,i}=m_{x,i} * \textbf{v}_i
+        refined_fm_input = fm_input * m_x.unsqueeze(
+            -1
+        )  # \textbf{v}_{x,i}=m_{x,i} * \textbf{v}_i
         logit += self.fm(refined_fm_input)
 
         y_pred = self.out(logit)

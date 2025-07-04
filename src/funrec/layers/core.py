@@ -68,7 +68,8 @@ class LocalActivationUnit(nn.Module):
         queries = query.expand(-1, user_behavior_len, -1)
 
         attention_input = torch.cat(
-            [queries, user_behavior, queries - user_behavior, queries * user_behavior], dim=-1
+            [queries, user_behavior, queries - user_behavior, queries * user_behavior],
+            dim=-1,
         )  # as the source code, subtraction simulates verctors' difference
         attention_output = self.dnn(attention_input)
 
@@ -126,14 +127,25 @@ class DNN(nn.Module):
         hidden_units = [inputs_dim] + list(hidden_units)
 
         self.linears = nn.ModuleList(
-            [nn.Linear(hidden_units[i], hidden_units[i + 1]) for i in range(len(hidden_units) - 1)]
+            [
+                nn.Linear(hidden_units[i], hidden_units[i + 1])
+                for i in range(len(hidden_units) - 1)
+            ]
         )
 
         if self.use_bn:
-            self.bn = nn.ModuleList([nn.BatchNorm1d(hidden_units[i + 1]) for i in range(len(hidden_units) - 1)])
+            self.bn = nn.ModuleList(
+                [
+                    nn.BatchNorm1d(hidden_units[i + 1])
+                    for i in range(len(hidden_units) - 1)
+                ]
+            )
 
         self.activation_layers = nn.ModuleList(
-            [activation_layer(activation, hidden_units[i + 1], dice_dim) for i in range(len(hidden_units) - 1)]
+            [
+                activation_layer(activation, hidden_units[i + 1], dice_dim)
+                for i in range(len(hidden_units) - 1)
+            ]
         )
 
         for name, tensor in self.linears.named_parameters():
@@ -187,8 +199,20 @@ class PredictionLayer(nn.Module):
 class Conv2dSame(nn.Conv2d):
     """Tensorflow like 'SAME' convolution wrapper for 2D convolutions"""
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True):
-        super(Conv2dSame, self).__init__(in_channels, out_channels, kernel_size, stride, 0, dilation, groups, bias)
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+    ):
+        super(Conv2dSame, self).__init__(
+            in_channels, out_channels, kernel_size, stride, 0, dilation, groups, bias
+        )
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, x):
@@ -199,6 +223,16 @@ class Conv2dSame(nn.Conv2d):
         pad_h = max((oh - 1) * self.stride[0] + (kh - 1) * self.dilation[0] + 1 - ih, 0)
         pad_w = max((ow - 1) * self.stride[1] + (kw - 1) * self.dilation[1] + 1 - iw, 0)
         if pad_h > 0 or pad_w > 0:
-            x = F.pad(x, [pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2])
-        out = F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
+            x = F.pad(
+                x, [pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2]
+            )
+        out = F.conv2d(
+            x,
+            self.weight,
+            self.bias,
+            self.stride,
+            self.padding,
+            self.dilation,
+            self.groups,
+        )
         return out

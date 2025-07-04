@@ -67,7 +67,9 @@ class AFN(BaseModel):
             gpus=gpus,
         )
 
-        self.ltl = LogTransformLayer(len(self.embedding_dict), self.embedding_size, ltl_hidden_size)
+        self.ltl = LogTransformLayer(
+            len(self.embedding_dict), self.embedding_size, ltl_hidden_size
+        )
         self.afn_dnn = DNN(
             self.embedding_size * ltl_hidden_size,
             afn_dnn_hidden_units,
@@ -82,10 +84,14 @@ class AFN(BaseModel):
         self.to(device)
 
     def forward(self, X):
-        sparse_embedding_list, _ = self.input_from_feature_columns(X, self.dnn_feature_columns, self.embedding_dict)
+        sparse_embedding_list, _ = self.input_from_feature_columns(
+            X, self.dnn_feature_columns, self.embedding_dict
+        )
         logit = self.linear_model(X)
         if len(sparse_embedding_list) == 0:
-            raise ValueError("Sparse embeddings not provided. AFN only accepts sparse embeddings as input.")
+            raise ValueError(
+                "Sparse embeddings not provided. AFN only accepts sparse embeddings as input."
+            )
 
         afn_input = torch.cat(sparse_embedding_list, dim=1)
         ltl_result = self.ltl(afn_input)

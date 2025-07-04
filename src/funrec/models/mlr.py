@@ -45,7 +45,13 @@ class MLR(BaseModel):
         device="cpu",
         gpus=None,
     ):
-        super(MLR, self).__init__(region_feature_columns, region_feature_columns, task=task, device=device, gpus=gpus)
+        super(MLR, self).__init__(
+            region_feature_columns,
+            region_feature_columns,
+            task=task,
+            device=device,
+            gpus=gpus,
+        )
 
         if region_num <= 1:
             raise ValueError("region_num must > 1")
@@ -67,26 +73,43 @@ class MLR(BaseModel):
             self.bias_feature_columns = []
 
         self.feature_index = build_input_features(
-            self.region_feature_columns + self.base_feature_columns + self.bias_feature_columns
+            self.region_feature_columns
+            + self.base_feature_columns
+            + self.bias_feature_columns
         )
 
         self.region_linear_model = nn.ModuleList(
             [
-                Linear(self.region_feature_columns, self.feature_index, self.init_std, self.device)
+                Linear(
+                    self.region_feature_columns,
+                    self.feature_index,
+                    self.init_std,
+                    self.device,
+                )
                 for i in range(self.region_num)
             ]
         )
 
         self.base_linear_model = nn.ModuleList(
             [
-                Linear(self.base_feature_columns, self.feature_index, self.init_std, self.device)
+                Linear(
+                    self.base_feature_columns,
+                    self.feature_index,
+                    self.init_std,
+                    self.device,
+                )
                 for i in range(self.region_num)
             ]
         )
 
         if self.bias_feature_columns is not None and len(self.bias_feature_columns) > 0:
             self.bias_model = nn.Sequential(
-                Linear(self.bias_feature_columns, self.feature_index, self.init_std, self.device),
+                Linear(
+                    self.bias_feature_columns,
+                    self.feature_index,
+                    self.init_std,
+                    self.device,
+                ),
                 PredictionLayer(task="binary", use_bias=False),
             )
 
@@ -95,13 +118,18 @@ class MLR(BaseModel):
         self.to(self.device)
 
     def get_region_score(self, inputs, region_number):
-        region_logit = torch.cat([self.region_linear_model[i](inputs) for i in range(region_number)], dim=-1)
+        region_logit = torch.cat(
+            [self.region_linear_model[i](inputs) for i in range(region_number)], dim=-1
+        )
         region_score = nn.Softmax(dim=-1)(region_logit)
         return region_score
 
     def get_learner_score(self, inputs, region_number):
         learner_score = self.prediction_layer(
-            torch.cat([self.region_linear_model[i](inputs) for i in range(region_number)], dim=-1)
+            torch.cat(
+                [self.region_linear_model[i](inputs) for i in range(region_number)],
+                dim=-1,
+            )
         )
         return learner_score
 

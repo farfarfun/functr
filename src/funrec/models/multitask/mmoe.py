@@ -81,7 +81,9 @@ class MMOE(BaseModel):
 
         for task_type in task_types:
             if task_type not in ["binary", "regression"]:
-                raise ValueError("task must be binary or regression, {} is illegal".format(task_type))
+                raise ValueError(
+                    "task must be binary or regression, {} is illegal".format(task_type)
+                )
 
         self.num_experts = num_experts
         self.task_names = task_names
@@ -125,12 +127,18 @@ class MMOE(BaseModel):
                 ]
             )
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.gate_dnn.named_parameters()), l2=l2_reg_dnn
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    self.gate_dnn.named_parameters(),
+                ),
+                l2=l2_reg_dnn,
             )
         self.gate_dnn_final_layer = nn.ModuleList(
             [
                 nn.Linear(
-                    gate_dnn_hidden_units[-1] if len(gate_dnn_hidden_units) > 0 else self.input_dim,
+                    gate_dnn_hidden_units[-1]
+                    if len(gate_dnn_hidden_units) > 0
+                    else self.input_dim,
                     self.num_experts,
                     bias=False,
                 )
@@ -156,13 +164,18 @@ class MMOE(BaseModel):
                 ]
             )
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.tower_dnn.named_parameters()),
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    self.tower_dnn.named_parameters(),
+                ),
                 l2=l2_reg_dnn,
             )
         self.tower_dnn_final_layer = nn.ModuleList(
             [
                 nn.Linear(
-                    tower_dnn_hidden_units[-1] if len(tower_dnn_hidden_units) > 0 else expert_dnn_hidden_units[-1],
+                    tower_dnn_hidden_units[-1]
+                    if len(tower_dnn_hidden_units) > 0
+                    else expert_dnn_hidden_units[-1],
                     1,
                     bias=False,
                 )
@@ -172,10 +185,18 @@ class MMOE(BaseModel):
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
-        regularization_modules = [self.expert_dnn, self.gate_dnn_final_layer, self.tower_dnn_final_layer]
+        regularization_modules = [
+            self.expert_dnn,
+            self.gate_dnn_final_layer,
+            self.tower_dnn_final_layer,
+        ]
         for module in regularization_modules:
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], module.named_parameters()), l2=l2_reg_dnn
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    module.named_parameters(),
+                ),
+                l2=l2_reg_dnn,
             )
         self.to(device)
 
@@ -200,7 +221,9 @@ class MMOE(BaseModel):
                 gate_dnn_out = self.gate_dnn_final_layer[i](gate_dnn_out)
             else:
                 gate_dnn_out = self.gate_dnn_final_layer[i](dnn_input)
-            gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)  # (bs, 1, dim)
+            gate_mul_expert = torch.matmul(
+                gate_dnn_out.softmax(1).unsqueeze(1), expert_outs
+            )  # (bs, 1, dim)
             mmoe_outs.append(gate_mul_expert.squeeze())
 
         # tower dnn (task-specific)

@@ -42,7 +42,9 @@ def slice_arrays(arrays, start=None, stop=None):
         arrays = [arrays]
 
     if isinstance(start, list) and stop is not None:
-        raise ValueError("The stop argument has to be None if the value of start " "is a list.")
+        raise ValueError(
+            "The stop argument has to be None if the value of start is a list."
+        )
     elif isinstance(arrays, list):
         if hasattr(start, "__len__"):
             # hdf5 datasets only support list objects as indices

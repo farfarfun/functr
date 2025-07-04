@@ -27,7 +27,16 @@ if __name__ == "__main__":
         ],
     )
 
-    sparse_features = ["uid", "user_city", "item_id", "author_id", "item_city", "channel", "music_id", "device"]
+    sparse_features = [
+        "uid",
+        "user_city",
+        "item_id",
+        "author_id",
+        "item_city",
+        "channel",
+        "music_id",
+        "device",
+    ]
     dense_features = ["duration_time"]
 
     target = ["finish", "like"]
@@ -42,7 +51,8 @@ if __name__ == "__main__":
     # 2.count #unique features for each sparse field,and record dense feature field name
 
     fixlen_feature_columns = [
-        SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=4) for feat in sparse_features
+        SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=4)
+        for feat in sparse_features
     ] + [
         DenseFeat(
             feat,
@@ -71,7 +81,11 @@ if __name__ == "__main__":
         device = "cuda:0"
 
     model = MMOE(
-        dnn_feature_columns, task_types=["binary", "binary"], l2_reg_embedding=1e-5, task_names=target, device=device
+        dnn_feature_columns,
+        task_types=["binary", "binary"],
+        l2_reg_embedding=1e-5,
+        task_names=target,
+        device=device,
     )
     model.compile(
         "adagrad",
@@ -79,9 +93,17 @@ if __name__ == "__main__":
         metrics=["binary_crossentropy"],
     )
 
-    history = model.fit(train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2)
+    history = model.fit(
+        train_model_input, train[target].values, batch_size=32, epochs=10, verbose=2
+    )
     pred_ans = model.predict(test_model_input, 256)
     print("")
     for i, target_name in enumerate(target):
-        print("%s test LogLoss" % target_name, round(log_loss(test[target[i]].values, pred_ans[:, i]), 4))
-        print("%s test AUC" % target_name, round(roc_auc_score(test[target[i]].values, pred_ans[:, i]), 4))
+        print(
+            "%s test LogLoss" % target_name,
+            round(log_loss(test[target[i]].values, pred_ans[:, i]), 4),
+        )
+        print(
+            "%s test AUC" % target_name,
+            round(roc_auc_score(test[target[i]].values, pred_ans[:, i]), 4),
+        )

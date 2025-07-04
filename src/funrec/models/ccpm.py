@@ -72,13 +72,22 @@ class CCPM(BaseModel):
         )
 
         if len(conv_kernel_width) != len(conv_filters):
-            raise ValueError("conv_kernel_width must have same element with conv_filters")
+            raise ValueError(
+                "conv_kernel_width must have same element with conv_filters"
+            )
 
-        filed_size = self.compute_input_dim(dnn_feature_columns, include_dense=False, feature_group=True)
-        self.conv_layer = ConvLayer(
-            field_size=filed_size, conv_kernel_width=conv_kernel_width, conv_filters=conv_filters, device=device
+        filed_size = self.compute_input_dim(
+            dnn_feature_columns, include_dense=False, feature_group=True
         )
-        self.dnn_input_dim = self.conv_layer.filed_shape * self.embedding_size * conv_filters[-1]
+        self.conv_layer = ConvLayer(
+            field_size=filed_size,
+            conv_kernel_width=conv_kernel_width,
+            conv_filters=conv_filters,
+            device=device,
+        )
+        self.dnn_input_dim = (
+            self.conv_layer.filed_shape * self.embedding_size * conv_filters[-1]
+        )
         self.dnn = DNN(
             self.dnn_input_dim,
             dnn_hidden_units,
@@ -91,7 +100,11 @@ class CCPM(BaseModel):
         )
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.dnn.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
         self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
 
@@ -103,7 +116,9 @@ class CCPM(BaseModel):
             X, self.dnn_feature_columns, self.embedding_dict, support_dense=False
         )
         if len(sparse_embedding_list) == 0:
-            raise ValueError("must have the embedding feature,now the embedding feature is None!")
+            raise ValueError(
+                "must have the embedding feature,now the embedding feature is None!"
+            )
         conv_input = concat_fun(sparse_embedding_list, axis=1)
         conv_input_concact = torch.unsqueeze(conv_input, 1)
         pooling_result = self.conv_layer(conv_input_concact)

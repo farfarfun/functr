@@ -8,9 +8,8 @@ from functr.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
 from functr.models import DeepFM
 
 
-
 def split(x):
-    key_ans = x.split('|')
+    key_ans = x.split("|")
     for key in key_ans:
         if key not in key2index:
             # Notice : input value 0 is a special "padding",so we do not use 0 to encode valid feature for sequence input
@@ -20,9 +19,15 @@ def split(x):
 
 if __name__ == "__main__":
     data = pd.read_csv("./movielens_sample.txt")
-    sparse_features = ["movie_id", "user_id",
-                       "gender", "age", "occupation", "zip", ]
-    target = ['rating']
+    sparse_features = [
+        "movie_id",
+        "user_id",
+        "gender",
+        "age",
+        "occupation",
+        "zip",
+    ]
+    target = ["rating"]
 
     # 1.Label Encoding for sparse features,and process sequence features
     for feat in sparse_features:
@@ -31,19 +36,30 @@ if __name__ == "__main__":
     # preprocess the sequence feature
 
     key2index = {}
-    genres_list = list(map(split, data['genres'].values))
+    genres_list = list(map(split, data["genres"].values))
     genres_length = np.array(list(map(len, genres_list)))
     max_len = max(genres_length)
     # Notice : padding=`post`
-    genres_list = pad_sequences(genres_list, maxlen=max_len, padding='post', )
+    genres_list = pad_sequences(
+        genres_list,
+        maxlen=max_len,
+        padding="post",
+    )
 
     # 2.count #unique features for each sparse field and generate feature config for sequence feature
 
-    fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique(), embedding_dim=4)
-                              for feat in sparse_features]
+    fixlen_feature_columns = [
+        SparseFeat(feat, data[feat].nunique(), embedding_dim=4)
+        for feat in sparse_features
+    ]
 
-    varlen_feature_columns = [VarLenSparseFeat(SparseFeat('genres', vocabulary_size=len(
-        key2index) + 1, embedding_dim=4), maxlen=max_len, combiner='mean')]  # Notice : value 0 is for padding for sequence input feature
+    varlen_feature_columns = [
+        VarLenSparseFeat(
+            SparseFeat("genres", vocabulary_size=len(key2index) + 1, embedding_dim=4),
+            maxlen=max_len,
+            combiner="mean",
+        )
+    ]  # Notice : value 0 is for padding for sequence input feature
 
     linear_feature_columns = fixlen_feature_columns + varlen_feature_columns
     dnn_feature_columns = fixlen_feature_columns + varlen_feature_columns
@@ -56,13 +72,26 @@ if __name__ == "__main__":
 
     # 4.Define Model,compile and train
 
-    device = 'cpu'
+    device = "cpu"
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
-        print('cuda ready...')
-        device = 'cuda:0'
+        print("cuda ready...")
+        device = "cuda:0"
 
-    model = DeepFM(linear_feature_columns, dnn_feature_columns, task='regression', device=device)
+    model = DeepFM(
+        linear_feature_columns, dnn_feature_columns, task="regression", device=device
+    )
 
-    model.compile("adam", "mse", metrics=['mse'], )
-    history = model.fit(model_input, data[target].values, batch_size=256, epochs=10, verbose=2, validation_split=0.2)
+    model.compile(
+        "adam",
+        "mse",
+        metrics=["mse"],
+    )
+    history = model.fit(
+        model_input,
+        data[target].values,
+        batch_size=256,
+        epochs=10,
+        verbose=2,
+        validation_split=0.2,
+    )

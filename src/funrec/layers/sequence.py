@@ -61,9 +61,13 @@ class SequencePoolingLayer(nn.Module):
             user_behavior_length = torch.sum(mask, dim=-1, keepdim=True)
             mask = mask.unsqueeze(2)
         else:
-            uiseq_embed_list, user_behavior_length = seq_value_len_list  # [B, T, E], [B, 1]
+            uiseq_embed_list, user_behavior_length = (
+                seq_value_len_list  # [B, T, E], [B, 1]
+            )
             mask = self._sequence_mask(
-                user_behavior_length, maxlen=uiseq_embed_list.shape[1], dtype=torch.float32
+                user_behavior_length,
+                maxlen=uiseq_embed_list.shape[1],
+                dtype=torch.float32,
             )  # [B, 1, maxlen]
             mask = torch.transpose(mask, 1, 2)  # [B, maxlen, 1]
 
@@ -143,12 +147,14 @@ class AttentionSequencePoolingLayer(nn.Module):
         # Mask
         if self.supports_masking:
             if mask is None:
-                raise ValueError("When supports_masking=True,input must support masking")
+                raise ValueError(
+                    "When supports_masking=True,input must support masking"
+                )
             keys_masks = mask.unsqueeze(1)
         else:
-            keys_masks = torch.arange(max_length, device=keys_length.device, dtype=keys_length.dtype).repeat(
-                batch_size, 1
-            )  # [B, T]
+            keys_masks = torch.arange(
+                max_length, device=keys_length.device, dtype=keys_length.dtype
+            ).repeat(batch_size, 1)  # [B, T]
             keys_masks = keys_masks < keys_length.view(-1, 1)  # 0, 1 mask
             keys_masks = keys_masks.unsqueeze(1)  # [B, 1, T]
 
@@ -200,10 +206,14 @@ class KMaxPooling(nn.Module):
 
     def forward(self, inputs):
         if self.axis < 0 or self.axis >= len(inputs.shape):
-            raise ValueError("axis must be 0~%d,now is %d" % (len(inputs.shape) - 1, self.axis))
+            raise ValueError(
+                "axis must be 0~%d,now is %d" % (len(inputs.shape) - 1, self.axis)
+            )
 
         if self.k < 1 or self.k > inputs.shape[self.axis]:
-            raise ValueError("k must be in 1 ~ %d,now k is %d" % (inputs.shape[self.axis], self.k))
+            raise ValueError(
+                "k must be in 1 ~ %d,now k is %d" % (inputs.shape[self.axis], self.k)
+            )
 
         out = torch.topk(inputs, k=self.k, dim=self.axis, sorted=True)[0]
         return out
@@ -318,21 +328,36 @@ class DynamicGRU(nn.Module):
             self.rnn = AUGRUCell(input_size, hidden_size, bias)
 
     def forward(self, inputs, att_scores=None, hx=None):
-        if not isinstance(inputs, PackedSequence) or not isinstance(att_scores, PackedSequence):
-            raise NotImplementedError("DynamicGRU only supports packed input and att_scores")
+        if not isinstance(inputs, PackedSequence) or not isinstance(
+            att_scores, PackedSequence
+        ):
+            raise NotImplementedError(
+                "DynamicGRU only supports packed input and att_scores"
+            )
 
         inputs, batch_sizes, sorted_indices, unsorted_indices = inputs
         att_scores, _, _, _ = att_scores
 
         max_batch_size = int(batch_sizes[0])
         if hx is None:
-            hx = torch.zeros(max_batch_size, self.hidden_size, dtype=inputs.dtype, device=inputs.device)
+            hx = torch.zeros(
+                max_batch_size,
+                self.hidden_size,
+                dtype=inputs.dtype,
+                device=inputs.device,
+            )
 
-        outputs = torch.zeros(inputs.size(0), self.hidden_size, dtype=inputs.dtype, device=inputs.device)
+        outputs = torch.zeros(
+            inputs.size(0), self.hidden_size, dtype=inputs.dtype, device=inputs.device
+        )
 
         begin = 0
         for batch in batch_sizes:
-            new_hx = self.rnn(inputs[begin : begin + batch], hx[0:batch], att_scores[begin : begin + batch])
+            new_hx = self.rnn(
+                inputs[begin : begin + batch],
+                hx[0:batch],
+                att_scores[begin : begin + batch],
+            )
             outputs[begin : begin + batch] = new_hx
             hx = new_hx
             begin += batch

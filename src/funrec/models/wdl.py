@@ -76,7 +76,11 @@ class WDL(BaseModel):
             )
             self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    self.dnn.named_parameters(),
+                ),
+                l2=l2_reg_dnn,
             )
             self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
 

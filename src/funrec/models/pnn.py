@@ -73,7 +73,9 @@ class PNN(BaseModel):
         self.task = task
 
         product_out_dim = 0
-        num_inputs = self.compute_input_dim(dnn_feature_columns, include_dense=False, feature_group=True)
+        num_inputs = self.compute_input_dim(
+            dnn_feature_columns, include_dense=False, feature_group=True
+        )
         num_pairs = int(num_inputs * (num_inputs - 1) / 2)
 
         if self.use_inner:
@@ -99,7 +101,11 @@ class PNN(BaseModel):
 
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.dnn.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
         self.add_regularization_weight(self.dnn_linear.weight, l2=l2_reg_dnn)
 
@@ -112,13 +118,17 @@ class PNN(BaseModel):
         linear_signal = torch.flatten(concat_fun(sparse_embedding_list), start_dim=1)
 
         if self.use_inner:
-            inner_product = torch.flatten(self.innerproduct(sparse_embedding_list), start_dim=1)
+            inner_product = torch.flatten(
+                self.innerproduct(sparse_embedding_list), start_dim=1
+            )
 
         if self.use_outter:
             outer_product = self.outterproduct(sparse_embedding_list)
 
         if self.use_outter and self.use_inner:
-            product_layer = torch.cat([linear_signal, inner_product, outer_product], dim=1)
+            product_layer = torch.cat(
+                [linear_signal, inner_product, outer_product], dim=1
+            )
         elif self.use_outter:
             product_layer = torch.cat([linear_signal, outer_product], dim=1)
         elif self.use_inner:

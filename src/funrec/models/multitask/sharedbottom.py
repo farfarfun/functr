@@ -75,7 +75,9 @@ class SharedBottom(BaseModel):
 
         for task_type in task_types:
             if task_type not in ["binary", "regression"]:
-                raise ValueError("task must be binary or regression, {} is illegal".format(task_type))
+                raise ValueError(
+                    "task must be binary or regression, {} is illegal".format(task_type)
+                )
 
         self.task_names = task_names
         self.input_dim = self.compute_input_dim(dnn_feature_columns)
@@ -107,13 +109,18 @@ class SharedBottom(BaseModel):
                 ]
             )
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.tower_dnn.named_parameters()),
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    self.tower_dnn.named_parameters(),
+                ),
                 l2=l2_reg_dnn,
             )
         self.tower_dnn_final_layer = nn.ModuleList(
             [
                 nn.Linear(
-                    tower_dnn_hidden_units[-1] if len(self.tower_dnn_hidden_units) > 0 else bottom_dnn_hidden_units[-1],
+                    tower_dnn_hidden_units[-1]
+                    if len(self.tower_dnn_hidden_units) > 0
+                    else bottom_dnn_hidden_units[-1],
                     1,
                     bias=False,
                 )
@@ -124,10 +131,17 @@ class SharedBottom(BaseModel):
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.bottom_dnn.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.bottom_dnn.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.tower_dnn_final_layer.named_parameters()),
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.tower_dnn_final_layer.named_parameters(),
+            ),
             l2=l2_reg_dnn,
         )
         self.to(device)

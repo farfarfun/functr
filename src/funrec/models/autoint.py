@@ -98,10 +98,17 @@ class AutoInt(BaseModel):
                 device=device,
             )
             self.add_regularization_weight(
-                filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.dnn.named_parameters()), l2=l2_reg_dnn
+                filter(
+                    lambda x: "weight" in x[0] and "bn" not in x[0],
+                    self.dnn.named_parameters(),
+                ),
+                l2=l2_reg_dnn,
             )
         self.int_layers = nn.ModuleList(
-            [InteractingLayer(embedding_size, att_head_num, att_res, device=device) for _ in range(att_layer_num)]
+            [
+                InteractingLayer(embedding_size, att_head_num, att_res, device=device)
+                for _ in range(att_layer_num)
+            ]
         )
 
         self.to(device)
@@ -121,7 +128,9 @@ class AutoInt(BaseModel):
 
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
 
-        if len(self.dnn_hidden_units) > 0 and self.att_layer_num > 0:  # Deep & Interacting Layer
+        if (
+            len(self.dnn_hidden_units) > 0 and self.att_layer_num > 0
+        ):  # Deep & Interacting Layer
             deep_out = self.dnn(dnn_input)
             stack_out = concat_fun([att_output, deep_out])
             logit += self.dnn_linear(stack_out)

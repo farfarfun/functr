@@ -74,7 +74,9 @@ class ESMM(BaseModel):
 
         for task_type in task_types:
             if task_type != "binary":
-                raise ValueError("task must be binary in ESMM, {} is illegal".format(task_type))
+                raise ValueError(
+                    "task must be binary in ESMM, {} is illegal".format(task_type)
+                )
 
         input_dim = self.compute_input_dim(dnn_feature_columns)
 
@@ -101,10 +103,18 @@ class ESMM(BaseModel):
         self.cvr_dnn_final_layer = nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
 
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.ctr_dnn.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.ctr_dnn.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
         self.add_regularization_weight(
-            filter(lambda x: "weight" in x[0] and "bn" not in x[0], self.cvr_dnn.named_parameters()), l2=l2_reg_dnn
+            filter(
+                lambda x: "weight" in x[0] and "bn" not in x[0],
+                self.cvr_dnn.named_parameters(),
+            ),
+            l2=l2_reg_dnn,
         )
         self.add_regularization_weight(self.ctr_dnn_final_layer.weight, l2=l2_reg_dnn)
         self.add_regularization_weight(self.cvr_dnn_final_layer.weight, l2=l2_reg_dnn)
