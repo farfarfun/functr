@@ -9,8 +9,8 @@ Reference:
 
 import torch
 
-from ..layers import FM, AFMLayer
-from .basemodel import BaseModel
+from funrec.layers import FM, AFMLayer
+from funrec.models.base import BaseModel
 
 
 class AFM(BaseModel):

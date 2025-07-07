@@ -10,9 +10,9 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ...inputs import combined_dnn_input
-from ...layers import DNN, PredictionLayer
-from ..basemodel import BaseModel
+from funrec.inputs import combined_dnn_input
+from funrec.layers import DNN, PredictionLayer
+from funrec.models.base import BaseModel
 
 
 class MMOE(BaseModel):

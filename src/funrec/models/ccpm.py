@@ -13,10 +13,10 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ..layers.core import DNN
-from ..layers.interaction import ConvLayer
-from ..layers.utils import concat_fun
-from .basemodel import BaseModel
+from funrec.layers.core import DNN
+from funrec.layers.interaction import ConvLayer
+from funrec.layers.utils import concat_fun
+from funrec.models.base import BaseModel
 
 
 class CCPM(BaseModel):

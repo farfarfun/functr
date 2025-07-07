@@ -11,8 +11,8 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ..layers import DNN, LogTransformLayer
-from .basemodel import BaseModel
+from funrec.layers import DNN, LogTransformLayer
+from funrec.models.base import BaseModel
 
 
 class AFN(BaseModel):

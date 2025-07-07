@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-from ..inputs import (
+from funrec.inputs import (
     DenseFeat,
     SparseFeat,
     VarLenSparseFeat,
@@ -21,8 +21,8 @@ from ..inputs import (
     get_dense_input,
     maxlen_lookup,
 )
-from ..layers import DNN, AttentionSequencePoolingLayer, DynamicGRU
-from .basemodel import BaseModel
+from funrec.layers import DNN, AttentionSequencePoolingLayer, DynamicGRU
+from funrec.models.base import BaseModel
 
 
 class DIEN(BaseModel):

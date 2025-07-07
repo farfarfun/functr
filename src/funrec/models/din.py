@@ -9,8 +9,8 @@ Reference:
 import torch
 import torch.nn as nn
 
-from .basemodel import BaseModel
-from ..inputs import (
+from funrec.models.base import BaseModel
+from funrec.inputs import (
     SparseFeat,
     VarLenSparseFeat,
     embedding_lookup,
@@ -19,7 +19,7 @@ from ..inputs import (
     get_varlen_pooling_list,
     combined_dnn_input,
 )
-from ..layers import DNN, AttentionSequencePoolingLayer
+from funrec.layers import DNN, AttentionSequencePoolingLayer
 
 
 class DIN(BaseModel):

@@ -4,7 +4,11 @@ version = "0.0.3"
 description = "funrec"
 readme = "README.md"
 requires-python = ">=3.9"
-dependencies = [ "scikit-learn>=1.5.2", "torch>=2.5.0", "tqdm>=4.66.5",]
+dependencies = [
+ "scikit-learn>=1.5.2",
+ "torch>=2.5.0",
+ "tqdm>=4.66.5",
+]
 [[project.authors]]
 name = "牛哥"
 email = "niuliangtao@qq.com"

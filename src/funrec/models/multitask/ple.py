@@ -12,7 +12,7 @@ import torch.nn as nn
 
 from ...inputs import combined_dnn_input
 from ...layers import DNN, PredictionLayer
-from ..basemodel import BaseModel
+from funrec.models.base import BaseModel
 
 
 class PLE(BaseModel):

@@ -10,9 +10,9 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ...inputs import combined_dnn_input
-from ...layers import DNN
-from ..basemodel import BaseModel
+from funrec.inputs import combined_dnn_input
+from funrec.layers import DNN
+from funrec.models.base import BaseModel
 
 
 class ESMM(BaseModel):

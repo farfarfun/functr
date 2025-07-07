@@ -1,8 +1,10 @@
 import torch
 from tensorflow.python.keras.callbacks import EarlyStopping, History, ModelCheckpoint
+from tensorflow.python.keras.callbacks import CallbackList
 
 EarlyStopping = EarlyStopping
 History = History
+CallbackList = CallbackList
 
 
 class ModelCheckpoint(ModelCheckpoint):

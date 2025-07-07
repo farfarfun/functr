@@ -11,8 +11,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .layers.sequence import SequencePoolingLayer
-from .layers.utils import concat_fun
+from funrec.layers.sequence import SequencePoolingLayer
+from funrec.layers.utils import concat_fun
 
 DEFAULT_GROUP_NAME = "default_group"
 
@@ -36,11 +36,11 @@ class SparseFeat(
     def __new__(
         cls,
         name,
-        vocabulary_size,
-        embedding_dim=4,
-        use_hash=False,
-        dtype="int32",
-        embedding_name=None,
+        vocabulary_size: int,
+        embedding_dim: int = 4,
+        use_hash: bool = False,
+        dtype: str = "int32",
+        embedding_name: str = None,
         group_name=DEFAULT_GROUP_NAME,
     ):
         if embedding_name is None:
@@ -202,7 +202,7 @@ def get_varlen_pooling_list(
 
 def create_embedding_matrix(
     feature_columns, init_std=0.0001, linear=False, sparse=False, device="cpu"
-):
+) -> nn.ModuleDict:
     # Return nn.ModuleDict: for sparse features, {embedding_name: nn.Embedding}
     # for varlen sparse features, {embedding_name: nn.EmbeddingBag}
     sparse_feature_columns = (

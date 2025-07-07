@@ -24,6 +24,7 @@ from .sequence import (
 )
 from .utils import concat_fun
 
+
 __all__ = [
     "concat_fun",
     "LocalActivationUnit",

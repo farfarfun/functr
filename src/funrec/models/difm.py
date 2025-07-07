@@ -9,9 +9,9 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ..inputs import SparseFeat, VarLenSparseFeat, combined_dnn_input
-from ..layers import DNN, FM, InteractingLayer, concat_fun
-from .basemodel import BaseModel
+from funrec.inputs import SparseFeat, VarLenSparseFeat, combined_dnn_input
+from funrec.layers import DNN, FM, InteractingLayer, concat_fun
+from funrec.models.base import BaseModel
 
 
 class DIFM(BaseModel):

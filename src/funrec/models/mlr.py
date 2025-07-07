@@ -10,9 +10,9 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ..inputs import build_input_features
-from ..layers import PredictionLayer
-from .basemodel import BaseModel, Linear
+from funrec.inputs import build_input_features
+from funrec.layers import PredictionLayer
+from funrec.models.base import BaseModel, Linear
 
 
 class MLR(BaseModel):

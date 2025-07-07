@@ -198,10 +198,10 @@ class KMaxPooling(nn.Module):
 
     """
 
-    def __init__(self, k, axis, device="cpu"):
+    def __init__(self, k: int, axis: int, device="cpu"):
         super(KMaxPooling, self).__init__()
-        self.k = k
-        self.axis = axis
+        self.k: int = k
+        self.axis: int = axis
         self.to(device)
 
     def forward(self, inputs):
@@ -317,10 +317,10 @@ class AUGRUCell(nn.Module):
 
 
 class DynamicGRU(nn.Module):
-    def __init__(self, input_size, hidden_size, bias=True, gru_type="AGRU"):
+    def __init__(self, input_size: int, hidden_size: int, bias=True, gru_type="AGRU"):
         super(DynamicGRU, self).__init__()
-        self.input_size = input_size
-        self.hidden_size = hidden_size
+        self.input_size: int = input_size
+        self.hidden_size: int = hidden_size
 
         if gru_type == "AGRU":
             self.rnn = AGRUCell(input_size, hidden_size, bias)

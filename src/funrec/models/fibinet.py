@@ -9,9 +9,9 @@ Reference:
 import torch
 import torch.nn as nn
 
-from ..inputs import DenseFeat, SparseFeat, VarLenSparseFeat, combined_dnn_input
-from ..layers import DNN, BilinearInteraction, SENETLayer
-from .basemodel import BaseModel
+from funrec.inputs import DenseFeat, SparseFeat, VarLenSparseFeat, combined_dnn_input
+from funrec.layers import DNN, BilinearInteraction, SENETLayer
+from funrec.models.base import BaseModel
 
 
 class FiBiNET(BaseModel):
