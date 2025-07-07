@@ -1,6 +1,5 @@
 """
-Author:
-    Ze Wang, wangze0801@126.com
+
 
 Reference:
     [1] Zhou G, Mou N, Fan Y, et al. Deep Interest Evolution Network for Click-Through Rate Prediction[J]. arXiv preprint arXiv:1809.03672, 2018. (https://arxiv.org/pdf/1809.03672.pdf)

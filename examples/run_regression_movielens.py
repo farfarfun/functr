@@ -1,10 +1,11 @@
 import pandas as pd
 import torch
-from functr.inputs import SparseFeat, get_feature_names
-from functr.models import DeepFM
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+
+from funrec.inputs import SparseFeat, get_feature_names
+from funrec.models import DeepFM
 
 if __name__ == "__main__":
     data = pd.read_csv("./movielens_sample.txt")

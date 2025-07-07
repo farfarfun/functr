@@ -1,10 +1,7 @@
 # -*- coding:utf-8 -*-
-"""
-Author:
-    Weichen Shen,weichenswc@163.com
-"""
 
-from collections import OrderedDict, defaultdict, namedtuple
+
+from collections import OrderedDict, defaultdict
 from itertools import chain
 
 import numpy as np
@@ -17,31 +14,16 @@ from funrec.layers.utils import concat_fun
 DEFAULT_GROUP_NAME = "default_group"
 
 
-class SparseFeat(
-    namedtuple(
-        "SparseFeat",
-        [
-            "name",
-            "vocabulary_size",
-            "embedding_dim",
-            "use_hash",
-            "dtype",
-            "embedding_name",
-            "group_name",
-        ],
-    )
-):
-    __slots__ = ()
-
-    def __new__(
-        cls,
-        name,
+class SparseFeat:
+    def __init__(
+        self,
+        name: str,
         vocabulary_size: int,
         embedding_dim: int = 4,
         use_hash: bool = False,
         dtype: str = "int32",
         embedding_name: str = None,
-        group_name=DEFAULT_GROUP_NAME,
+        group_name: str = DEFAULT_GROUP_NAME,
     ):
         if embedding_name is None:
             embedding_name = name
@@ -51,30 +33,24 @@ class SparseFeat(
             print(
                 "Notice! Feature Hashing on the fly currently is not supported in torch version,you can use tensorflow version!"
             )
-        return super(SparseFeat, cls).__new__(
-            cls,
-            name,
-            vocabulary_size,
-            embedding_dim,
-            use_hash,
-            dtype,
-            embedding_name,
-            group_name,
-        )
+        self.name = name
+        self.vocabulary_size = vocabulary_size
+        self.embedding_dim = embedding_dim
+        self.use_hash = use_hash
+        self.dtype = dtype
+        self.embedding_name = embedding_name
+        self.group_name = group_name
 
     def __hash__(self):
         return self.name.__hash__()
 
 
-class VarLenSparseFeat(
-    namedtuple("VarLenSparseFeat", ["sparsefeat", "maxlen", "combiner", "length_name"])
-):
-    __slots__ = ()
-
-    def __new__(cls, sparsefeat, maxlen, combiner="mean", length_name=None):
-        return super(VarLenSparseFeat, cls).__new__(
-            cls, sparsefeat, maxlen, combiner, length_name
-        )
+class VarLenSparseFeat:
+    def __init__(self, sparsefeat, maxlen, combiner="mean", length_name=None):
+        self.sparsefeat = sparsefeat
+        self.maxlen = maxlen
+        self.combiner = combiner
+        self.length_name = length_name
 
     @property
     def name(self):
@@ -108,11 +84,11 @@ class VarLenSparseFeat(
         return self.name.__hash__()
 
 
-class DenseFeat(namedtuple("DenseFeat", ["name", "dimension", "dtype"])):
-    __slots__ = ()
-
-    def __new__(cls, name, dimension=1, dtype="float32"):
-        return super(DenseFeat, cls).__new__(cls, name, dimension, dtype)
+class DenseFeat:
+    def __init__(self, name, dimension=1, dtype="float32"):
+        self.name = name
+        self.dimension = dimension
+        self.dtype = dtype
 
     def __hash__(self):
         return self.name.__hash__()

@@ -5,6 +5,7 @@ description = "funrec"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+ "funutil>=1.0.53",
  "scikit-learn>=1.5.2",
  "torch>=2.5.0",
  "tqdm>=4.66.5",

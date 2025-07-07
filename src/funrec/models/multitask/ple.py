@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 """
-Author:
-    zanshuxun, zanshuxun@aliyun.com
-
 Reference:
     [1] Tang H, Liu J, Zhao M, et al. Progressive layered extraction (ple): A novel multi-task learning (mtl) model for personalized recommendations[C]//Fourteenth ACM Conference on Recommender Systems. 2020.(https://dl.acm.org/doi/10.1145/3383313.3412236)
 """
@@ -10,9 +7,10 @@ Reference:
 import torch
 import torch.nn as nn
 
+from funrec.models.base import BaseModel
+
 from ...inputs import combined_dnn_input
 from ...layers import DNN, PredictionLayer
-from funrec.models.base import BaseModel
 
 
 class PLE(BaseModel):

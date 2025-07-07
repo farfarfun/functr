@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import torch
-from functr.inputs import DenseFeat, SparseFeat, get_feature_names
-from functr.models import MMOE
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+
+from funrec.inputs import DenseFeat, SparseFeat, get_feature_names
+from funrec.models import MMOE
 
 if __name__ == "__main__":
     # data description can be found in https://www.biendata.xyz/competition/icmechallenge2019/

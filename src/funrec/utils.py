@@ -1,21 +1,15 @@
 # -*- coding:utf-8 -*-
-"""
-Author:
-    Weichen Shen,weichenswc@163.com
-"""
+""" """
 
 import json
-import logging
 from threading import Thread
 
 import requests
+from funutil import getLogger
+from packaging.version import parse
+from pip._vendor.packaging.version import parse
 
-logger = logging.getLogger("functr")
-try:
-    from packaging.version import parse
-except ImportError as e:
-    logger.error(e)
-    from pip._vendor.packaging.version import parse
+logger = getLogger("funrec")
 
 
 def check_version(version):
@@ -36,7 +30,7 @@ def check_version(version):
                         continue
                     latest_version = max(latest_version, ver)
                 if latest_version > version:
-                    logging.warning(
+                    logger.warning(
                         "\nDeepCTR-PyTorch version {0} detected. Your version is {1}.\nUse `pip install -U deepctr-torch` to upgrade.Changelog: https://github.com/shenweichen/DeepCTR-Torch/releases/tag/v{0}".format(
                             latest_version, version
                         )

@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import torch
 import torch.nn as nn
+from torch.nn import Module
 
 
 class Dice(nn.Module):
@@ -53,7 +54,7 @@ class Identity(nn.Module):
         return inputs
 
 
-def activation_layer(act_name, hidden_size=None, dice_dim=2):
+def activation_layer(act_name, hidden_size=None, dice_dim=2)->Module:
     """Construct activation layers
 
     Args:
@@ -61,23 +62,22 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2):
         hidden_size: int, used for Dice activation
         dice_dim: int, used for Dice activation
     Return:
-        act_layer: activation layer
+        activation layer
     """
     if isinstance(act_name, str):
         if act_name.lower() == "sigmoid":
-            act_layer = nn.Sigmoid()
+            return nn.Sigmoid()
         elif act_name.lower() == "linear":
-            act_layer = Identity()
+            return Identity()
         elif act_name.lower() == "relu":
-            act_layer = nn.ReLU(inplace=True)
+            return nn.ReLU(inplace=True)
         elif act_name.lower() == "dice":
             assert dice_dim
-            act_layer = Dice(hidden_size, dice_dim)
+            return Dice(hidden_size, dice_dim)
         elif act_name.lower() == "prelu":
-            act_layer = nn.PReLU()
+            return nn.PReLU()
     elif issubclass(act_name, nn.Module):
-        act_layer = act_name()
+        return act_name()
     else:
         raise NotImplementedError
 
-    return act_layer

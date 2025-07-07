@@ -4,8 +4,9 @@ sys.path.insert(0, "..")
 
 import numpy as np
 import torch
-from functr.inputs import DenseFeat, SparseFeat, VarLenSparseFeat, get_feature_names
-from functr.models.din import DIN
+
+from funrec.inputs import DenseFeat, SparseFeat, VarLenSparseFeat, get_feature_names
+from funrec.models.din import DIN
 
 
 def get_xy_fd():

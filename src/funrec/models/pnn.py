@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-Author:
-    Weichen Shen,weichenswc@163.com
+
 Reference:
     [1] Qu Y, Cai H, Ren K, et al. Product-based neural networks for user response prediction[C]//Data Mining (ICDM), 2016 IEEE 16th International Conference on. IEEE, 2016: 1149-1154.(https://arxiv.org/pdf/1611.00144.pdf)
 """

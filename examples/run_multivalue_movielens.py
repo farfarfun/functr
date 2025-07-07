@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
 import torch
+from keras.src.utils import pad_sequences
 from sklearn.preprocessing import LabelEncoder
-from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
-from functr.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
-from functr.models import DeepFM
+from funrec.inputs import SparseFeat, VarLenSparseFeat, get_feature_names
+from funrec.models import DeepFM
 
 
 def split(x):

@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-Author:
-    Weiyu Cheng, weiyu_cheng@sjtu.edu.cn
+
 
 Reference:
     [1] Cheng, W., Shen, Y. and Huang, L. 2020. Adaptive Factorization Network: Learning Adaptive-Order Feature

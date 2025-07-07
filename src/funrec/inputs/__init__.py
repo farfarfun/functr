@@ -1,15 +1,19 @@
 from .core import (
-    SequencePoolingLayer,
     DenseFeat,
+    SequencePoolingLayer,
     SparseFeat,
     VarLenSparseFeat,
     build_input_features,
-    create_embedding_matrix,
-    get_varlen_pooling_list,
-    varlen_embedding_lookup,
     combined_dnn_input,
+    concat_fun,
+    create_embedding_matrix,
+    embedding_lookup,
+    get_dense_input,
+    get_feature_names,
+    get_varlen_pooling_list,
+    maxlen_lookup,
+    varlen_embedding_lookup,
 )
-
 
 __all__ = [
     "SequencePoolingLayer",
@@ -21,4 +25,10 @@ __all__ = [
     "get_varlen_pooling_list",
     "varlen_embedding_lookup",
     "combined_dnn_input",
+    "get_dense_input",
+    "get_feature_names",
+    "get_varlen_pooling_list",
+    "concat_fun",
+    "embedding_lookup",
+    "maxlen_lookup",
 ]

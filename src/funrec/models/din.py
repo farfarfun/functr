@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 """
-Author:
-    Yuef Zhang
 Reference:
     [1] Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068. (https://arxiv.org/pdf/1706.06978.pdf)
 """
@@ -9,17 +7,17 @@ Reference:
 import torch
 import torch.nn as nn
 
-from funrec.models.base import BaseModel
 from funrec.inputs import (
     SparseFeat,
     VarLenSparseFeat,
-    embedding_lookup,
-    varlen_embedding_lookup,
-    maxlen_lookup,
-    get_varlen_pooling_list,
     combined_dnn_input,
+    embedding_lookup,
+    get_varlen_pooling_list,
+    maxlen_lookup,
+    varlen_embedding_lookup,
 )
 from funrec.layers import DNN, AttentionSequencePoolingLayer
+from funrec.models.base import BaseModel
 
 
 class DIN(BaseModel):
