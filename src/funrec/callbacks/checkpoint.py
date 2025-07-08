@@ -1,13 +1,16 @@
 import torch
-from tensorflow.python.keras.callbacks import EarlyStopping, History, ModelCheckpoint
-from tensorflow.python.keras.callbacks import CallbackList
+from funutil import getLogger
+from tensorflow.python.keras.callbacks import CallbackList, EarlyStopping, History
+from tensorflow.python.keras.callbacks import ModelCheckpoint as _ModelCheckpoint
 
-EarlyStopping = EarlyStopping
-History = History
-CallbackList = CallbackList
+from funrec.layers import DNN
+
+__all__ = ["DNN", "ModelCheckpoint", "History", "EarlyStopping", "CallbackList"]
+
+logger = getLogger("funrec")
 
 
-class ModelCheckpoint(ModelCheckpoint):
+class ModelCheckpoint(_ModelCheckpoint):
     """Save the model after every epoch.
 
     `filepath` can contain named formatting options,
@@ -48,14 +51,14 @@ class ModelCheckpoint(ModelCheckpoint):
             if self.save_best_only:
                 current = logs.get(self.monitor)
                 if current is None:
-                    print(
+                    logger.info(
                         "Can save best model only with %s available, skipping."
                         % self.monitor
                     )
                 else:
                     if self.monitor_op(current, self.best):
                         if self.verbose > 0:
-                            print(
+                            logger.info(
                                 "Epoch %05d: %s improved from %0.5f to %0.5f,"
                                 " saving model to %s"
                                 % (
@@ -73,13 +76,14 @@ class ModelCheckpoint(ModelCheckpoint):
                             torch.save(self.model, filepath)
                     else:
                         if self.verbose > 0:
-                            print(
-                                "Epoch %05d: %s did not improve from %0.5f"
-                                % (epoch + 1, self.monitor, self.best)
+                            logger.success(
+                                f"Epoch {epoch + 1:05d}: {self.monitor} did not improve from {self.best:0.5f}"
                             )
             else:
                 if self.verbose > 0:
-                    print("Epoch %05d: saving model to %s" % (epoch + 1, filepath))
+                    logger.success(
+                        "Epoch %05d: saving model to %s" % (epoch + 1, filepath)
+                    )
                 if self.save_weights_only:
                     torch.save(self.model.state_dict(), filepath)
                 else:

@@ -54,7 +54,7 @@ class Identity(nn.Module):
         return inputs
 
 
-def activation_layer(act_name, hidden_size=None, dice_dim=2)->Module:
+def activation_layer(act_name, hidden_size=None, dice_dim=2) -> Module:
     """Construct activation layers
 
     Args:
@@ -80,4 +80,3 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2)->Module:
         return act_name()
     else:
         raise NotImplementedError
-

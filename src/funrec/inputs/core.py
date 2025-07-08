@@ -7,10 +7,12 @@ from itertools import chain
 import numpy as np
 import torch
 import torch.nn as nn
+from funutil import getLogger
 
 from funrec.layers.sequence import SequencePoolingLayer
 from funrec.layers.utils import concat_fun
 
+logger = getLogger("funrec")
 DEFAULT_GROUP_NAME = "default_group"
 
 
@@ -30,7 +32,7 @@ class SparseFeat:
         if embedding_dim == "auto":
             embedding_dim = 6 * int(pow(vocabulary_size, 0.25))
         if use_hash:
-            print(
+            logger.info(
                 "Notice! Feature Hashing on the fly currently is not supported in torch version,you can use tensorflow version!"
             )
         self.name = name

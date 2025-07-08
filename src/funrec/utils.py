@@ -37,7 +37,7 @@ def check_version(version):
                     )
         except Exception as e:
             logger.error(e)
-            print(
+            logger.error(
                 "Please check the latest version manually on https://pypi.org/project/deepctr-torch/#history"
             )
             return

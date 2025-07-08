@@ -8,12 +8,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
+from funutil import getLogger
 from sklearn.metrics import accuracy_score, log_loss, mean_squared_error, roc_auc_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-
-from funrec.callbacks import History, CallbackList
+from funrec.callbacks import CallbackList, History
 from funrec.inputs import (
     DenseFeat,
     SparseFeat,
@@ -23,12 +23,12 @@ from funrec.inputs import (
     get_varlen_pooling_list,
     varlen_embedding_lookup,
 )
-
+from funrec.layers import PredictionLayer
+from funrec.layers.utils import slice_arrays
 
 from .line import Linear
 
-from funrec.layers import PredictionLayer
-from funrec.layers.utils import slice_arrays
+logger = getLogger("funrec")
 
 
 class BaseModel(nn.Module):
@@ -168,11 +168,11 @@ class BaseModel(nn.Module):
         optim = self.optim
 
         if self.gpus:
-            print("parallel running on these gpus:", self.gpus)
+            logger.info("parallel running on these gpus:", self.gpus)
             model = torch.nn.DataParallel(model, device_ids=self.gpus)
             batch_size *= len(self.gpus)  # input `batch_size` is batch_size per gpu
         else:
-            print(self.device)
+            logger.info(self.device)
 
         train_loader = DataLoader(
             dataset=train_tensor_data, shuffle=shuffle, batch_size=batch_size
@@ -192,7 +192,7 @@ class BaseModel(nn.Module):
         callbacks.model.stop_training = False
 
         # Train
-        print(
+        logger.info(
             "Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
                 len(train_tensor_data), len(val_y), steps_per_epoch
             )
@@ -262,7 +262,7 @@ class BaseModel(nn.Module):
             # verbose
             if verbose > 0:
                 epoch_time = int(time.time() - start_time)
-                print("Epoch {0}/{1}".format(epoch + 1, epochs))
+                logger.info("Epoch {0}/{1}".format(epoch + 1, epochs))
 
                 eval_str = "{0}s - loss: {1: .4f}".format(
                     epoch_time, epoch_logs["loss"]
@@ -279,7 +279,7 @@ class BaseModel(nn.Module):
                             + name
                             + ": {0: .4f}".format(epoch_logs["val_" + name])
                         )
-                print(eval_str)
+                logger.success(eval_str)
             callbacks.on_epoch_end(epoch, epoch_logs)
             if self.stop_training:
                 break

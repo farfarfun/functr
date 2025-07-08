@@ -201,7 +201,3 @@ class DIN(BaseModel):
             if feat.name in self.history_feature_list:
                 interest_dim += feat.embedding_dim
         return interest_dim
-
-
-if __name__ == "__main__":
-    pass
