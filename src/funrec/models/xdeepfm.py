@@ -127,6 +127,8 @@ class xDeepFM(BaseModel):
         )
 
         linear_logit = self.linear_model(X)
+        cin_logit = None
+        dnn_logit = None
         if self.use_cin:
             cin_input = torch.cat(sparse_embedding_list, dim=1)
             cin_output = self.cin(cin_input)
@@ -136,25 +138,9 @@ class xDeepFM(BaseModel):
             dnn_output = self.dnn(dnn_input)
             dnn_logit = self.dnn_linear(dnn_output)
 
-        if (
-            len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) == 0
-        ):  # only linear
-            final_logit = linear_logit
-        elif (
-            len(self.dnn_hidden_units) == 0 and len(self.cin_layer_size) > 0
-        ):  # linear + CIN
-            final_logit = linear_logit + cin_logit
-        elif (
-            len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) == 0
-        ):  # linear +　Deep
-            final_logit = linear_logit + dnn_logit
-        elif (
-            len(self.dnn_hidden_units) > 0 and len(self.cin_layer_size) > 0
-        ):  # linear + CIN + Deep
-            final_logit = linear_logit + dnn_logit + cin_logit
-        else:
-            raise NotImplementedError
-
-        y_pred = self.out(final_logit)
-
-        return y_pred
+        final_logit = linear_logit  # linear
+        if len(self.cin_layer_size) > 0:
+            final_logit += cin_logit  # + CIN
+        if len(self.dnn_hidden_units) > 0:
+            final_logit += dnn_logit  # + Deep
+        return self.out(final_logit)
