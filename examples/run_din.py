@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from funrec.inputs import DenseFeat, SparseFeat, VarLenSparseFeat, get_feature_names
-from funrec.models.din import DIN
+from funrec.models import DIN
 
 
 def get_xy_fd():
