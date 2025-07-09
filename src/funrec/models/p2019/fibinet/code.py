@@ -13,7 +13,7 @@ from funrec.layers import DNN, BilinearInteraction, SENETLayer
 from funrec.models.b2000 import BaseModel
 
 
-class FiBiNET(BaseModel):
+class FiBiNet(BaseModel):
     """Instantiates the Feature Importance and Bilinear feature Interaction NETwork architecture.
 
     :param linear_feature_columns: An iterable containing all the features used by linear part of the model.
@@ -53,7 +53,7 @@ class FiBiNET(BaseModel):
         device="cpu",
         gpus=None,
     ):
-        super(FiBiNET, self).__init__(
+        super(FiBiNet, self).__init__(
             linear_feature_columns,
             dnn_feature_columns,
             l2_reg_linear=l2_reg_linear,

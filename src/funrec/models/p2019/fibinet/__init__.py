@@ -1,3 +1,3 @@
-from .code import FiBiNET
+from .code import FiBiNet
 
-__all__ = ["FiBiNET"]
+__all__ = ["FiBiNet"]

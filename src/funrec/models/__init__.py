@@ -2,7 +2,7 @@ from .p2015 import CCPM
 from .p2016 import PNN, WDL
 from .p2017 import AFM, DCN, DCNMix, DeepFM, SharedBottom, MLR, NFM, xDeepFM
 from .p2018 import MMOE, ESMM, DIN, DIEN
-from .p2019 import AutoInt, FiBiNET, IFM, ONN, SDM, MIND
+from .p2019 import AutoInt, FiBiNet, IFM, ONN, SDM, MIND
 from .p2020 import PLE, AFN, DIFM
 
 __all__ = [
@@ -21,7 +21,7 @@ __all__ = [
     "AutoInt",
     "DCN",
     "DCNMix",
-    "FiBiNET",
+    "FiBiNet",
     "NFM",
     "MLR",
     "ONN",
