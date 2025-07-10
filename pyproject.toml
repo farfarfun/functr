@@ -28,3 +28,6 @@ Releases = "https://github.com/farfarfun/funrec/releases"
 
 [tool.setuptools]
 license-files = []
+
+[format]
+line-length = 100  # 调整为 100 字符

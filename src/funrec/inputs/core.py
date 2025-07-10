@@ -37,9 +37,9 @@ class SparseFeat:
             )
         self.name = name
         self.vocabulary_size = vocabulary_size
-        self.embedding_dim = embedding_dim
-        self.use_hash = use_hash
-        self.dtype = dtype
+        self.embedding_dim: int = embedding_dim
+        self.use_hash: bool = use_hash
+        self.dtype: str = dtype
         self.embedding_name = embedding_name
         self.group_name = group_name
 
@@ -48,11 +48,17 @@ class SparseFeat:
 
 
 class VarLenSparseFeat:
-    def __init__(self, sparsefeat, maxlen, combiner="mean", length_name=None):
-        self.sparsefeat = sparsefeat
-        self.maxlen = maxlen
-        self.combiner = combiner
-        self.length_name = length_name
+    def __init__(
+        self,
+        sparsefeat: SparseFeat,
+        maxlen: int,
+        combiner: str = "mean",
+        length_name: str = None,
+    ):
+        self.sparsefeat: SparseFeat = sparsefeat
+        self.maxlen: int = maxlen
+        self.combiner: str = combiner
+        self.length_name: str = length_name
 
     @property
     def name(self):

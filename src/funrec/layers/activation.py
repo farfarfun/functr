@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.nn import Module
 
 
-class Dice(nn.Module):
+class Dice(Module):
     """The Data Adaptive Activation Function in DIN,which can be viewed as a generalization of PReLu and can adaptively adjust the rectified point according to distribution of input data.
 
     Input shape:
@@ -46,7 +46,7 @@ class Dice(nn.Module):
         return out
 
 
-class Identity(nn.Module):
+class Identity(Module):
     def __init__(self, **kwargs):
         super(Identity, self).__init__()
 
@@ -78,5 +78,4 @@ def activation_layer(act_name, hidden_size=None, dice_dim=2) -> Module:
             return nn.PReLU()
     elif issubclass(act_name, nn.Module):
         return act_name()
-    else:
-        raise NotImplementedError
+    raise NotImplementedError

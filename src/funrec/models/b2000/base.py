@@ -43,11 +43,12 @@ class BaseModel(nn.Module):
         task="binary",
         device="cpu",
         gpus=None,
+        *args,
+        **kwargs,
     ):
-        super(BaseModel, self).__init__()
+        super(BaseModel, self).__init__(*args, **kwargs)
         torch.manual_seed(seed)
         self.dnn_feature_columns = dnn_feature_columns
-
         self.reg_loss = torch.zeros((1,), device=device)
         self.aux_loss = torch.zeros((1,), device=device)
         self.device = device
@@ -78,10 +79,7 @@ class BaseModel(nn.Module):
             self.embedding_dict.parameters(), l2=l2_reg_embedding
         )
         self.add_regularization_weight(self.linear_model.parameters(), l2=l2_reg_linear)
-
-        self.out = PredictionLayer(
-            task,
-        )
+        self.out = PredictionLayer(task)
         self.to(device)
 
         # parameters for callbacks
@@ -169,7 +167,7 @@ class BaseModel(nn.Module):
 
         if self.gpus:
             logger.info("parallel running on these gpus:", self.gpus)
-            model = torch.nn.DataParallel(model, device_ids=self.gpus)
+            model = nn.DataParallel(model, device_ids=self.gpus)
             batch_size *= len(self.gpus)  # input `batch_size` is batch_size per gpu
         else:
             logger.info(self.device)
@@ -421,7 +419,7 @@ class BaseModel(nn.Module):
 
     def add_regularization_weight(self, weight_list, l1=0.0, l2=0.0):
         # For a Parameter, put it in a list to keep Compatible with get_regularization_loss()
-        if isinstance(weight_list, torch.nn.parameter.Parameter):
+        if isinstance(weight_list, nn.parameter.Parameter):
             weight_list = [weight_list]
         # For generators, filters and ParameterLists, convert them to a list of tensors to avoid bugs.
         # e.g., we can't pickle generator objects when we save the model.

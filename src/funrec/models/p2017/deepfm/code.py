@@ -51,6 +51,8 @@ class DeepFM(BaseModel):
         task="binary",
         device="cpu",
         gpus=None,
+        *args,
+        **kwargs,
     ):
         super(DeepFM, self).__init__(
             linear_feature_columns,
@@ -62,6 +64,8 @@ class DeepFM(BaseModel):
             task=task,
             device=device,
             gpus=gpus,
+            *args,
+            **kwargs,
         )
 
         self.use_fm = use_fm

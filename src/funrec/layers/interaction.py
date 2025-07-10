@@ -454,25 +454,17 @@ class InteractingLayer(nn.Module):
         keys = torch.stack(torch.split(keys, self.att_embedding_size, dim=2))
         values = torch.stack(torch.split(values, self.att_embedding_size, dim=2))
 
-        inner_product = torch.einsum(
-            "bnik,bnjk->bnij", querys, keys
-        )  # head_num None F F
+        # head_num None F F
+        inner_product = torch.einsum("bnik,bnjk->bnij", querys, keys)
         if self.scaling:
             inner_product /= self.att_embedding_size**0.5
-        self.normalized_att_scores = F.softmax(
-            inner_product, dim=-1
-        )  # head_num None F F
-        result = torch.matmul(
-            self.normalized_att_scores, values
-        )  # head_num None F D/head_num
 
-        result = torch.cat(
-            torch.split(
-                result,
-                1,
-            ),
-            dim=-1,
-        )
+        # head_num None F F
+        self.normalized_att_scores = F.softmax(inner_product, dim=-1)
+        # head_num None F D/head_num
+        result = torch.matmul(self.normalized_att_scores, values)
+
+        result = torch.cat(torch.split(result, 1), dim=-1)
         result = torch.squeeze(result, dim=0)  # None F D
         if self.use_res:
             result += torch.tensordot(inputs, self.W_Res, dims=([-1], [0]))
@@ -540,11 +532,14 @@ class CrossNet(nn.Module):
                 dot_ = torch.matmul(x_0, xl_w)
                 x_l = dot_ + self.bias[i] + x_l
             elif self.parameterization == "matrix":
-                xl_w = torch.matmul(
-                    self.kernels[i], x_l
-                )  # W * xi  (bs, in_features, 1)
-                dot_ = xl_w + self.bias[i]  # W * xi + b
-                x_l = x_0 * dot_ + x_l  # x0 · (W * xi + b) +xl  Hadamard-product
+                # W * xi  (bs, in_features, 1)
+                xl_w = torch.matmul(self.kernels[i], x_l)
+
+                # W * xi + b
+                dot_ = xl_w + self.bias[i]
+
+                # x0 · (W * xi + b) +xl  Hadamard-product
+                x_l = x_0 * dot_ + x_l
             else:  # error
                 raise ValueError("parameterization should be 'vector' or 'matrix'")
         x_l = torch.squeeze(x_l, dim=2)
@@ -764,11 +759,9 @@ class OutterProductLayer(nn.Module):
             )
         else:
             # 1 * pair * (k or 1)
-
             k = torch.unsqueeze(self.kernel, 0)
 
             # batch * pair
-
             kp = torch.sum(p * q * k, dim=-1)
 
             # p q # b * p * k
@@ -854,9 +847,7 @@ class LogTransformLayer(nn.Module):
         self.ltl_biases = nn.Parameter(torch.Tensor(1, 1, ltl_hidden_size))
         self.bn = nn.ModuleList([nn.BatchNorm1d(embedding_size) for i in range(2)])
         nn.init.normal_(self.ltl_weights, mean=0.0, std=0.1)
-        nn.init.zeros_(
-            self.ltl_biases,
-        )
+        nn.init.zeros_(self.ltl_biases)
 
     def forward(self, inputs):
         # Avoid numeric overflow

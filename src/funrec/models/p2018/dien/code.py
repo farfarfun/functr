@@ -428,7 +428,7 @@ class InterestEvolving(nn.Module):
                 weight_normalization=att_weight_normalization,
                 return_score=False,
             )
-            self.interest_evolution = nn.GRU(
+            self.interest_evolution = nn.GwRU(
                 input_size=input_size, hidden_size=input_size, batch_first=True
             )
         elif gru_type == "AIGRU":
